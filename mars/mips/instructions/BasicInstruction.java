@@ -95,7 +95,7 @@ public class BasicInstruction extends Instruction {
        * Gets the 32-character operation mask.  Each mask position represents a 
        * bit position in the 32-bit machine instruction.  Operation codes and
        * unused bits are represented in the mask by 1's and 0's.  Operand codes
-       * are represented by 'f', 's', and 't' for bits occupied by first, secon
+       * are represented by 'f', 's', and 't' for bits occupied by first, second
        * and third operand, respectively.
        *
        * @return The 32 bit mask, as a String

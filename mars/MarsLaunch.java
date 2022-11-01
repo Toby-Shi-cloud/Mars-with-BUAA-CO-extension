@@ -94,6 +94,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                   option must be placed AFTER ALL FILE NAMES, because everything<br>
                   that follows it is interpreted as a program argument to be<br>
                   made available to the MIPS program at runtime.<br>
+        coERR  -- Output messages of CO extension in stderr (default at stdout).<br>
+         coL1  -- set display level at 1 (print std answer).<br>
+         coL2  -- set display level at 2 (print std debug messages).<br>
     **/
     
    
@@ -401,6 +404,26 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             }
             if (args[i].toLowerCase().equals("ic")) { // added 19-Jul-2012 DPS
                countInstructions = true;
+               continue;
+            }
+            if (args[i].equalsIgnoreCase("coL1")) {
+               if (Globals.displayLevel != 0) {
+                  // Let it fall thru and get handled by catch-all
+               } else {
+                  Globals.displayLevel = 1;
+                  continue;
+               }
+            }
+            if (args[i].equalsIgnoreCase("coL2")) {
+               if (Globals.displayLevel != 0) {
+                  // Let it fall thru and get handled by catch-all
+               } else {
+                  Globals.displayLevel = 2;
+                  continue;
+               }
+            }
+            if (args[i].equalsIgnoreCase("coERR")) { // added 1-Nov-2022, by Toby to support BUAA CO.
+               Globals.displayOutput = System.err;
                continue;
             }
          
@@ -762,7 +785,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                return;
             }
          }
-         out.println("MARS "+Globals.version+"  Copyright "+Globals.copyrightYears+" "+Globals.copyrightHolders+"\n");
+         out.println("MARS "+Globals.version+"  Copyright "+Globals.copyrightYears+" "+Globals.copyrightHolders);
+         out.println("BUAA CO Extension Version "+Globals.adaptedVersion+"  by Toby Shi");
+         out.println();
       }
    	
    
@@ -835,8 +860,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          out.println("unless the global statement label 'main' is defined in one of the files.");
          out.println("Exception handler not automatically assembled.  Add it to the file list.");
          out.println("Options used here do not affect MARS Settings menu values and vice versa.");
+         out.println(); // added 1-Nov-2022, by Toby to support BUAA CO.
+         out.println("Additional options for BUAA CO extension as follows.");
+         out.println("   coERR  -- Output messages of CO extension in stderr (default at stdout).");
+         out.println("    coL1  -- set display level at 1 (print std answer).");
+         out.println("    coL2  -- set display level at 2 (print std debug messages).");
       }
    
    }
-   	
-   	
+
+

@@ -343,7 +343,35 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                             Exceptions.RESERVED_INSTRUCTION_EXCEPTION);
                      }
                      // THIS IS WHERE THE INSTRUCTION EXECUTION IS ACTUALLY SIMULATED!
+                     Globals.displayRFchanging = null;
+                     Globals.displayDMchanging = null;
                      instruction.getSimulationCode().simulate(statement);
+                     if (Globals.displayLevel == 2) {
+                        Globals.displayOutput.println("@PC%08x -> %s (%08x)".formatted(
+                           pc,
+                           statement.getBasicAssemblyStatement(),
+                           Integer.parseUnsignedInt(statement.getMachineStatement(), 2)
+                        ));
+                        if (Globals.displayRFchanging != null) {
+                           Globals.displayOutput.println("\t\t" + Globals.displayRFchanging);
+                        }
+                        if (Globals.displayDMchanging != null) {
+                           Globals.displayOutput.println("\t\t" + Globals.displayDMchanging);
+                        }
+                     } else if (Globals.displayLevel == 1) {
+                        if (Globals.displayRFchanging != null) {
+                           Globals.displayOutput.println("@%08x: %s".formatted(
+                              Integer.parseUnsignedInt(statement.getMachineStatement(), 2),
+                              Globals.displayRFchanging
+                           ));
+                        }
+                        if (Globals.displayDMchanging != null) {
+                           Globals.displayOutput.println("@%08x: %s".formatted(
+                              Integer.parseUnsignedInt(statement.getMachineStatement(), 2),
+                              Globals.displayDMchanging
+                           ));
+                        }
+                     }
                   	
                   	// IF statement added 7/26/06 (explanation above)
                      if (Globals.getSettings().getBackSteppingEnabled()) {
