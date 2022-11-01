@@ -361,13 +361,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      } else if (Globals.displayLevel == 1) {
                         if (Globals.displayRFchanging != null) {
                            Globals.displayOutput.println("@%08x: %s".formatted(
-                              Integer.parseUnsignedInt(statement.getMachineStatement(), 2),
+                              pc,
                               Globals.displayRFchanging
                            ));
                         }
                         if (Globals.displayDMchanging != null) {
                            Globals.displayOutput.println("@%08x: %s".formatted(
-                              Integer.parseUnsignedInt(statement.getMachineStatement(), 2),
+                              pc,
                               Globals.displayDMchanging
                            ));
                         }
