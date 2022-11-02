@@ -357,7 +357,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    // Allocates blocks if necessary.
        public int set(int address, int value, int length) throws AddressErrorException {
          // $display("*%h <= %h", pc, addr, din);
-         Globals.displayDMchanging = "*%08x <= %08x".formatted(address, value);
+         Globals.displayDMchanging = String.format("*%08x <= %08x", address, value);
          int oldValue = 0;
          if (Globals.debug) System.out.println("memory["+address+"] set to "+value+"("+length+" bytes)");
          int relativeByteAddress;

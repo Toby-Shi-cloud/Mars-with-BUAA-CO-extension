@@ -347,11 +347,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      Globals.displayDMchanging = null;
                      instruction.getSimulationCode().simulate(statement);
                      if (Globals.displayLevel == 2) {
-                        Globals.displayOutput.println("@PC%08x -> %s (%08x)".formatted(
+                        Globals.displayOutput.printf("@PC%08x -> %s (%08x)%n",
                            pc,
                            statement.getBasicAssemblyStatement(),
                            Integer.parseUnsignedInt(statement.getMachineStatement(), 2)
-                        ));
+                        );
                         if (Globals.displayRFchanging != null) {
                            Globals.displayOutput.println("\t\t" + Globals.displayRFchanging);
                         }
@@ -360,16 +360,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         }
                      } else if (Globals.displayLevel == 1) {
                         if (Globals.displayRFchanging != null) {
-                           Globals.displayOutput.println("@%08x: %s".formatted(
+                           Globals.displayOutput.printf("@%08x: %s%n",
                               pc,
                               Globals.displayRFchanging
-                           ));
+                           );
                         }
                         if (Globals.displayDMchanging != null) {
-                           Globals.displayOutput.println("@%08x: %s".formatted(
+                           Globals.displayOutput.printf("@%08x: %s%n",
                               pc,
                               Globals.displayDMchanging
-                           ));
+                           );
                         }
                      }
                   	

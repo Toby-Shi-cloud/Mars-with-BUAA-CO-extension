@@ -2,7 +2,7 @@
 
 这是一个魔改版 Mars，专用于 BUAA 的计算机组成实验。
 
-基于 [Mars 4.5 开发](http://courses.missouristate.edu/KenVollmar/MARS/)
+基于 [Mars 4.5](http://courses.missouristate.edu/KenVollmar/MARS/) 开发
 
 ## 与原版有什么不同？
 
