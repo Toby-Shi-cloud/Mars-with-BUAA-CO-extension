@@ -5,6 +5,7 @@
    import java.awt.*;
    import java.awt.event.*;
    import java.util.concurrent.ArrayBlockingQueue;
+   import java.util.concurrent.LinkedBlockingQueue;
    import javax.swing.event.DocumentListener;
    import javax.swing.undo.UndoableEdit;
    import mars.simulator.Simulator;
@@ -54,7 +55,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    	// the first NUMBER_OF_CHARACTERS_TO_CUT characters.  The latter
    	// must obviously be smaller than the former.
       public static final int MAXIMUM_SCROLLED_CHARACTERS = Globals.maximumMessageCharacters;
-      public static final int NUMBER_OF_CHARACTERS_TO_CUT = Globals.maximumMessageCharacters/10 ; // 10%
+      public static final int NUMBER_OF_CHARACTERS_TO_CUT = Globals.maximumMessageCharacters/10 ; // 10%'
+      private static final LinkedBlockingQueue<String> PENDING_INPUT_QUEUE = new LinkedBlockingQueue<>();
    
    /**
      *  Constructor for the class, sets up two fresh tabbed text areas for program feedback.
@@ -402,7 +404,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                                     } 
                                     else {
                                         // remove the '\n' and put it at the end
-                                       e.getDocument().remove(offset, 1);
+                                       //e.getDocument().remove(offset, 1);
+                                       e.getDocument().remove(offset, inserted.length()-i);
+                                       String trailing = inserted.substring(i+1);
+                                       try {PENDING_INPUT_QUEUE.put(trailing);}
+                                       catch (Exception e) {e.printStackTrace();}
                                        e.getDocument().insertString(e.getDocument().getLength(), "\n", null);
                                         // insertUpdate will be called again, since we have inserted the '\n' at the end
                                     }
@@ -460,6 +466,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             run.setNavigationFilter(navigationFilter);
             run.getDocument().addDocumentListener(listener);
             Simulator.getInstance().addStopListener(stopListener);
+            if(!PENDING_INPUT_QUEUE.isEmpty()) {
+                String pending = null;
+                try {pending = PENDING_INPUT_QUEUE.take();}
+                catch (InterruptedException e) {e.printStackTrace();}
+                if(pending != null) {
+                    try {run.getDocument().insertString(run.getDocument().getLength(), pending, null);}
+                    catch (BadLocationException e) {e.printStackTrace();}
+                }
+            }
          }
           void cleanup() { // not required to be called from the GUI thread
             EventQueue.invokeLater(
