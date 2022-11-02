@@ -104,8 +104,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         ? Globals.program.getBackStepper().addRegisterFileRestore(num,regFile[i].setValue(val))
                      	: regFile[i].setValue(val);
                   // $display("$%d <= %h", WPC, Waddr, WData);
-                  Globals.displayRFchanging = "$%d <= %08x".formatted(num, val);
-                  break;
+                   Globals.displayRFchanging = String.format("$%d <= %08x", num, val);
+                   break;
                }
             }
          }

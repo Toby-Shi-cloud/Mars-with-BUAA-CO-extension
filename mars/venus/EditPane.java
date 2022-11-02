@@ -67,6 +67,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    	
       public EditPane(VenusUI appFrame){
          super(new BorderLayout());
+         this.setMinimumSize(new Dimension(0,0));
          this.mainUI = appFrame;
       	// user.dir, user's current working directory, is guaranteed to have a value
          currentDirectoryPath = System.getProperty("user.dir");
@@ -75,7 +76,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          Globals.getSettings().addObserver(this);
          this.fileStatus = new FileStatus();      
          lineNumbers = new JLabel();
-      
+
          if (Globals.getSettings().getBooleanSetting(Settings.GENERIC_TEXT_EDITOR)) {
             this.sourceCode = new GenericTextArea(this, lineNumbers);
          } 
@@ -83,8 +84,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             this.sourceCode = new JEditBasedTextArea(this, lineNumbers);
          }
       	// sourceCode is responsible for its own scrolling
-         this.add(this.sourceCode.getOuterComponent(), BorderLayout.CENTER);      	
-      	
+         this.add(this.sourceCode.getOuterComponent(), BorderLayout.CENTER);
+
       	// If source code is modified, will set flag to trigger/request file save.
          sourceCode.getDocument().addDocumentListener(
                new DocumentListener() {
@@ -172,7 +173,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      sourceCode.requestFocusInWindow();
                   }
                });
-      
+
          JPanel editInfo = new JPanel(new BorderLayout());
          caretPositionLabel = new JLabel();
          caretPositionLabel.setToolTipText("Tracks the current position of the text editing cursor.");

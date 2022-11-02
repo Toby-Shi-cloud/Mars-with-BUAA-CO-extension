@@ -2,7 +2,7 @@
 
 这是一个魔改版 Mars，专用于 BUAA 的计算机组成实验。
 
-基于 [Mars 4.5 开发](http://courses.missouristate.edu/KenVollmar/MARS/)
+基于 [Mars 4.5](http://courses.missouristate.edu/KenVollmar/MARS/) 开发
 
 ## 与原版有什么不同？
 
@@ -26,6 +26,6 @@
 
 ## 版权声明
 
-请务必准守[原版 Mars 版权声明](http://courses.missouristate.edu/KenVollmar/MARS/license.htm)。
+请务必遵守[原版 Mars 版权声明](MARSlicense.txt)。
 
 本扩展无版权声明，可以随意下载使用或修改，前提是声明出处，并保留源代码中的`版本信息`
