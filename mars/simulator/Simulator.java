@@ -346,7 +346,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      Globals.displayRFchanging = null;
                      Globals.displayDMchanging = null;
                      instruction.getSimulationCode().simulate(statement);
-                     if (Globals.displayLevel == 2) {
+                     if (Globals.displayLevel == 2) { // added 1-Nov-2022, by Toby to support BUAA CO.
                         Globals.displayOutput.printf("@PC%08x -> %s (%08x)%n",
                            pc,
                            statement.getBasicAssemblyStatement(),
