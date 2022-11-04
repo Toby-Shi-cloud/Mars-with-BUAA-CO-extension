@@ -44,7 +44,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @version August 2003-5
  */
 
-    public class InstructionSet
+   @SuppressWarnings(value={"unchecked", "rawtypes"})
+    public class InstructionSet extends BranchOperation
    {
       private ArrayList instructionList;
 	  private ArrayList opcodeMatchMaps;
@@ -3074,26 +3075,35 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             inst.createExampleTokenList();
          }
 
-		 HashMap maskMap = new HashMap();
-		 ArrayList matchMaps = new ArrayList();
-		 for (int i = 0; i < instructionList.size(); i++) {
-		 	Object rawInstr = instructionList.get(i);
-			if (rawInstr instanceof BasicInstruction) {
-				BasicInstruction basic = (BasicInstruction) rawInstr;
-				Integer mask = Integer.valueOf(basic.getOpcodeMask());
-				Integer match = Integer.valueOf(basic.getOpcodeMatch());
-				HashMap matchMap = (HashMap) maskMap.get(mask);
-				if (matchMap == null) {
-					matchMap = new HashMap();
-					maskMap.put(mask, matchMap);
-					matchMaps.add(new MatchMap(mask, matchMap));
-				}
-				matchMap.put(match, basic);
-			}
-		 }
-		 Collections.sort(matchMaps);
-		 this.opcodeMatchMaps = matchMaps;
+         initialize();
       }
+
+   /**
+    * This method is originally written in method populate.
+    * It is extracted separately to support load instruction during the runtime.
+    * @see LoadInstruction
+    */
+   public void initialize() {
+      HashMap maskMap = new HashMap();
+      ArrayList matchMaps = new ArrayList();
+      for (int i = 0; i < instructionList.size(); i++) {
+         Object rawInstr = instructionList.get(i);
+         if (rawInstr instanceof BasicInstruction) {
+            BasicInstruction basic = (BasicInstruction) rawInstr;
+            Integer mask = Integer.valueOf(basic.getOpcodeMask());
+            Integer match = Integer.valueOf(basic.getOpcodeMatch());
+            HashMap matchMap = (HashMap) maskMap.get(mask);
+            if (matchMap == null) {
+               matchMap = new HashMap();
+               maskMap.put(mask, matchMap);
+               matchMaps.add(new MatchMap(mask, matchMap));
+            }
+            matchMap.put(match, basic);
+         }
+      }
+      Collections.sort(matchMaps);
+      this.opcodeMatchMaps = matchMaps;
+   }
 
 	public BasicInstruction findByBinaryCode(int binaryInstr) {
 		ArrayList matchMaps = this.opcodeMatchMaps;
@@ -3246,71 +3256,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
               number + " ", Exceptions.SYSCALL_EXCEPTION);
       }
    	
-   	/*
-   	 * Method to process a successful branch condition.  DO NOT USE WITH JUMP
-   	 * INSTRUCTIONS!  The branch operand is a relative displacement in words
-   	 * whereas the jump operand is an absolute address in bytes.
-   	 *
-   	 * The parameter is displacement operand from instruction.
-   	 *
-   	 * Handles delayed branching if that setting is enabled.
-   	 */
-   	 // 4 January 2008 DPS:  The subtraction of 4 bytes (instruction length) after
-   	 // the shift has been removed.  It is left in as commented-out code below.
-   	 // This has the effect of always branching as if delayed branching is enabled, 
-   	 // even if it isn't.  This mod must work in conjunction with
-   	 // ProgramStatement.java, buildBasicStatementFromBasicInstruction() method near
-   	 // the bottom (currently line 194, heavily commented).
-   	 
-       private void processBranch(int displacement) {
-         if (Globals.getSettings().getDelayedBranchingEnabled()) {
-            // Register the branch target address (absolute byte address).
-            DelayedBranch.register(RegisterFile.getProgramCounter() + (displacement << 2));
-         } 
-         else {
-            // Decrement needed because PC has already been incremented
-            RegisterFile.setProgramCounter(
-                RegisterFile.getProgramCounter()
-                  + (displacement << 2)); // - Instruction.INSTRUCTION_LENGTH);	
-         }	 
-      }
-   
-   	/*
-   	 * Method to process a jump.  DO NOT USE WITH BRANCH INSTRUCTIONS!  
-   	 * The branch operand is a relative displacement in words
-   	 * whereas the jump operand is an absolute address in bytes.
-   	 *
-   	 * The parameter is jump target absolute byte address.
-   	 *
-   	 * Handles delayed branching if that setting is enabled.
-   	 */
-   	 
-       private void processJump(int targetAddress) {
-         if (Globals.getSettings().getDelayedBranchingEnabled()) {
-            DelayedBranch.register(targetAddress);
-         } 
-         else {
-            RegisterFile.setProgramCounter(targetAddress);
-         }	 
-      }
-   
-   	/*
-   	 * Method to process storing of a return address in the given
-   	 * register.  This is used only by the "and link"
-   	 * instructions: jal, jalr, bltzal, bgezal.  If delayed branching
-   	 * setting is off, the return address is the address of the
-   	 * next instruction (e.g. the current PC value).  If on, the
-   	 * return address is the instruction following that, to skip over
-   	 * the delay slot.
-   	 *
-   	 * The parameter is register number to receive the return address.
-   	 */
-   	 
-       private void processReturnAddress(int register) {
-         RegisterFile.updateRegister(register, RegisterFile.getProgramCounter() +
-                 ((Globals.getSettings().getDelayedBranchingEnabled()) ? 
-            	  Instruction.INSTRUCTION_LENGTH : 0) );	 
-      }
 
 	  private static class MatchMap implements Comparable {
 	  	private int mask;
