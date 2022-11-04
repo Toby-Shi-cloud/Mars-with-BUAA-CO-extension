@@ -31,15 +31,9 @@ jobs:
         call CreateMarsJar.bat
         rename Mars.jar Mars_CO_${{  github.ref_name }}.jar
 
-    - name: Zip example files
-      shell: cmd
-      run: |
-        zip Mars_CO_${{  github.ref_name }}_example.zip adduo.class bhelbal.class subuo.class testcode.asm
-
     - name: Create a release
       uses: softprops/action-gh-release@v1
       with:
         files: |
           Mars_CO_${{  github.ref_name }}.jar
-          Mars_CO_${{  github.ref_name }}_example.zip
         draft: true
