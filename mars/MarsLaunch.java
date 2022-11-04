@@ -1,14 +1,15 @@
-   package mars;
-   import mars.venus.*;
-   import mars.util.*;
-   import mars.mips.dump.*;
-   import mars.mips.hardware.*;
-   import mars.simulator.*;
-   import java.io.*;
-   import java.util.*;
-   import java.awt.*;
-   import javax.swing.*;
-   import javax.swing.JOptionPane;   // KENV 9/8/2004
+package mars;
+
+import mars.venus.*;
+import mars.util.*;
+import mars.mips.dump.*;
+import mars.mips.hardware.*;
+import mars.mips.instructions.*;
+import mars.simulator.*;
+
+import java.io.*;
+import java.util.*;
+import javax.swing.*;
 
 /*
 Copyright (c) 2003-2012,  Pete Sanderson and Kenneth Vollmar
@@ -72,7 +73,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                   <tt>mc &lt;config$gt;</tt>, where &lt;config$gt; is <tt>Default</tt><br>
                   for the MARS default 32-bit address space, <tt>CompactDataAtZero</tt> for<br>
                   a 32KB address space with data segment at address 0, or <tt>CompactTextAtZero</tt><br>
-                  for a 32KB address space with text segment at address 0.<br>
+                  for a 32KB address space with text segment at address 0. <tt>CompactLargeText</tt><br>
+                  for more text address support based on CompactDataAtZero<br>
            me  -- display MARS messages to standard err instead of standard out. Can separate via redirection.</br>
            nc  -- do not display copyright notice (for cleaner redirected/piped output).</br>
    		  np  -- No Pseudo-instructions allowed ("ne" will work also).<br>
@@ -97,6 +99,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         coERR  -- Output messages of CO extension in stderr (default at stdout).<br>
          coL1  -- set display level at 1 (print std answer).<br>
          coL2  -- set display level at 2 (print std debug messages).<br>
+           cl  -- load an additional instruction from a .class file.<br>
     **/
     
    
@@ -425,6 +428,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             if (args[i].equalsIgnoreCase("coERR")) { // added 1-Nov-2022, by Toby to support BUAA CO.
                Globals.displayOutput = System.err;
                continue;
+            }
+            if (args[i].equalsIgnoreCase("cl")) { // added 5-Nov-2022, by Toby to support additional instruction.
+               String filename = args[++i];
+               try {
+                  LoadInstruction.loadClass(filename);
+                  continue;
+               } catch (ClassNotFoundException e) {
+                  out.println(e.toString());
+                  // Let it fall thru and get handled by catch-all
+               }
             }
          
          
@@ -786,7 +799,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             }
          }
          out.println("MARS "+Globals.version+"  Copyright "+Globals.copyrightYears+" "+Globals.copyrightHolders);
-         out.println("BUAA CO Extension Version "+Globals.adaptedVersion+"  by Toby Shi");
+         out.println("BUAA CO Extension Version "+Globals.extensionVersion+"  by Toby Shi");
          out.println();
       }
    	
@@ -832,8 +845,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          out.println("     mc <config>  -- set memory configuration.  Argument <config> is");
          out.println("            case-sensitive and possible values are: Default for the default");
          out.println("            32-bit address space, CompactDataAtZero for a 32KB memory with");
-         out.println("            data segment at address 0, or CompactTextAtZero for a 32KB");
-         out.println("            memory with text segment at address 0.");
+         out.println("            data segment at address 0, CompactTextAtZero for a 32KB");
+         out.println("            memory with text segment at address 0, or CompactLargeText for");
+         out.println("            up to 1024*32 text space based on CompactDataAtZero");
          out.println("     me  -- display MARS messages to standard err instead of standard out. ");
          out.println("            Can separate messages from program output using redirection");
          out.println("     nc  -- do not display copyright notice (for cleaner redirected/piped output).");
@@ -865,6 +879,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          out.println("   coERR  -- Output messages of CO extension in stderr (default at stdout).");
          out.println("    coL1  -- set display level at 1 (print std answer).");
          out.println("    coL2  -- set display level at 2 (print std debug messages).");
+         out.println("      cl <class> -- load an additional instruction from a .class file.");
       }
    
    }
