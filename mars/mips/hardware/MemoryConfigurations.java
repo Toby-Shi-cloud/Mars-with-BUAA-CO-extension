@@ -171,7 +171,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          0x00006ffc, // text limit address
          0x0000aeff, // kernel data segment limit address
          0x00007ffc, // kernel text limit address
-         0x00005000, // stack limit address
+         0x00002000, // stack limit address
          0x0000afff  // memory map limit address
          };
    

@@ -1,4 +1,4 @@
 @echo off
 
-dir /S /B *.java > srcList.txt
-javac -encoding gbk @srcList.txt
+dir /S /B mars\*.java > srcList.txt
+javac -encoding gbk Mars.java @srcList.txt

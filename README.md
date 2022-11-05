@@ -32,7 +32,7 @@
 前往 [release](https://GitHub.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/releases/) 下载 `Mars_CO.jar` 和 `Mars_CO_example.zip`，然后在命令行运行：
 
 ```sh
-java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl bhelbal.class cl adduo.class cl subuo.class
+java -jar mars.jar test\testcode.asm mc CompactLargeText coL1 cl test\bhelbal.class cl test\adduo.class cl test\subuo.class
 ```
 
 ## 注意事项
