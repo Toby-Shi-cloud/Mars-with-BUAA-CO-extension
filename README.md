@@ -23,7 +23,7 @@
 1. `coERR`：将本扩展打印的任何内容（扩展版本信息除外）打印到 `stderr` 而非默认的 `stdout`
 2. `coL1`：打印寄存器修改和内存修改信息，与 `P4` 要求相同
 3. `coL2`：打印额外信息，方便逐步查错和调试
-4. `mc CompactLargeText`: 在原版 `mc CompactDataAtZero` 的基础上支持多达 $1024$ 条 $32$ 位机器码（此设置可在 `GUI` 界面使用）
+4. `mc CompactLargeText`: 在原版 `mc CompactDataAtZero` 的基础上支持多达 $4096$ 条 $32$ 位机器码（此设置可在 `GUI` 界面使用）
 5. `cl <class>`：加载 `.class` 文件以支持额外的指令。
 > 若要创建受支持的 `.class` 文件，你的 `class` 必须实现 `mars.mips.instructions.AdditionalInstruction` 接口。详细示例请见源码中的 `bhelbal.java`，`adduo.java`，和 `subuo.java`。
 
