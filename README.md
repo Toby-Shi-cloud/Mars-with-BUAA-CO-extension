@@ -25,14 +25,17 @@
 3. `coL2`：打印额外信息，方便逐步查错和调试
 4. `mc CompactLargeText`: 在原版 `mc CompactDataAtZero` 的基础上支持多达 $4096$ 条 $32$ 位机器码（此设置可在 `GUI` 界面使用）
 5. `cl <class>`：加载 `.class` 文件以支持额外的指令。
+> 请务必把 `.class` 文件和 `Mars.jar` 放在相同目录下。
+> 
 > 若要创建受支持的 `.class` 文件，你的 `class` 必须实现 `mars.mips.instructions.AdditionalInstruction` 接口。详细示例请见源码中的 `bhelbal.java`，`adduo.java`，和 `subuo.java`。
+6. `ig`：忽略全部算术溢出
 
 ### 运行示例
 
 前往 [release](https://GitHub.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/releases/) 下载 `Mars_CO.jar` 和 `Mars_CO_example.zip`，然后在命令行运行：
 
 ```sh
-java -jar mars.jar test\testcode.asm mc CompactLargeText coL1 cl test\bhelbal.class cl test\adduo.class cl test\subuo.class
+java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl bhelbal.class ig
 ```
 
 ## 注意事项

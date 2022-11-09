@@ -96,13 +96,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       /** Where the options follows will display - added 1-Nov-2022, by Toby to support BUAA CO */
       public static PrintStream displayOutput = System.out;
       /** Current Version of this adapted version */
-      public static final String extensionVersion = "0.2";
+      public static final String extensionVersion = "0.3";
       /** Use by RF to store the changing log string */
       public static String displayRFchanging = null;
       /** Use by DM to store the changing log string */
       public static String displayDMchanging = null;
       /** display level, 0 (default) if print none, 1 if print std ans, 2 if print std debug */
       public static int displayLevel = 0;
+      /** ignore arithmetic overflow if true */
+      public static boolean ignoreArithmeticOverflow = false;
 
    	
       public static boolean runSpeedPanelExists = false;
