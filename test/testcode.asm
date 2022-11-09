@@ -6,11 +6,11 @@
         ori	$t0	$zero	0
         ori	$s1	$zero	1
 loop:	beq	$t0	$a0	end
-        adduo	$t3	$t1	$t2
-        adduo	$t1	$zero	$t2
-        adduo	$t2	$zero	$t3
+        add	$t3	$t1	$t2
+        add	$t1	$zero	$t2
+        add	$t2	$zero	$t3
         sll	$t3	$t0	2
-        adduo	$t3	$t3	$a1
+        add	$t3	$t3	$a1
         sw	$t2	0($t3)
         add	$t0	$t0	$s1
         bhelbal	$zero	$zero	loop

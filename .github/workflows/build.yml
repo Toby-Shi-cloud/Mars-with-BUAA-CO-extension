@@ -31,9 +31,26 @@ jobs:
         call CreateMarsJar.bat
         rename Mars.jar Mars_CO_${{  github.ref_name }}.jar
 
+    - name: Zip test file
+      shell: cmd
+      run: |
+        cd test
+        python -u zipTestClass.py MarsTest.zip
+        move MarsTest.zip ..\Mars_Test_CO_${{  github.ref_name }}.zip
+        cd ..
+
     - name: Create a release
       uses: softprops/action-gh-release@v1
       with:
         files: |
           Mars_CO_${{  github.ref_name }}.jar
+          Mars_Test_CO_${{  github.ref_name }}.zip
         draft: true
+
+    - name: Test
+      shell: cmd
+      run: |
+        move Mars_CO_${{  github.ref_name }}.jar test\mars.jar
+        cd test
+        java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl bhelbal.class ig > testTemp.txt
+        fc testTemp.txt stdout.txt

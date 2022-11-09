@@ -105,8 +105,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      int add2 = RegisterFile.getValue(operands[2]);
                      int sum = add1 + add2;
                   // overflow on A+B detected when A and B have same sign and A+B has other sign.
-                     if ((add1 >= 0 && add2 >= 0 && sum < 0)
-                        || (add1 < 0 && add2 < 0 && sum >= 0))
+                     if (Globals.ignoreArithmeticOverflow == false &&
+                        ((add1 >= 0 && add2 >= 0 && sum < 0)
+                        || (add1 < 0 && add2 < 0 && sum >= 0)))
                      {
                         throw new ProcessingException(statement,
                             "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);
@@ -128,8 +129,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      int sub2 = RegisterFile.getValue(operands[2]);
                      int dif = sub1 - sub2;
                   // overflow on A-B detected when A and B have opposite signs and A-B has B's sign
-                     if ((sub1 >= 0 && sub2 < 0 && dif < 0)
-                        || (sub1 < 0 && sub2 >= 0 && dif >= 0))
+                     if (Globals.ignoreArithmeticOverflow == false &&
+                        ((sub1 >= 0 && sub2 < 0 && dif < 0)
+                        || (sub1 < 0 && sub2 >= 0 && dif >= 0)))
                      {
                         throw new ProcessingException(statement,
                             "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);
@@ -151,8 +153,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      int add2 = operands[2] << 16 >> 16;
                      int sum = add1 + add2;
                   // overflow on A+B detected when A and B have same sign and A+B has other sign.
-                     if ((add1 >= 0 && add2 >= 0 && sum < 0)
-                        || (add1 < 0 && add2 < 0 && sum >= 0))
+                     if (Globals.ignoreArithmeticOverflow == false &&
+                        ((add1 >= 0 && add2 >= 0 && sum < 0)
+                        || (add1 < 0 && add2 < 0 && sum >= 0)))
                      {
                         throw new ProcessingException(statement,
                             "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);

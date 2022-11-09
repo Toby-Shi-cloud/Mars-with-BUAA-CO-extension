@@ -100,6 +100,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          coL1  -- set display level at 1 (print std answer).<br>
          coL2  -- set display level at 2 (print std debug messages).<br>
            cl  -- load an additional instruction from a .class file.<br>
+                  Note that your .class file must be in the same directory as mars.jar.<br>
+           ig  -- ignore arithmetic overflow.<br>
     **/
     
    
@@ -360,7 +362,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                continue;
             }
             if (args[i].toLowerCase().equals("ad") || 
-               	 args[i].toLowerCase().equals("da")) {
+               args[i].toLowerCase().equals("da")) {
                Globals.debug = true;
                simulate = false;
                continue;
@@ -436,8 +438,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                   continue;
                } catch (ClassNotFoundException e) {
                   out.println(e.toString());
-                  // Let it fall thru and get handled by catch-all
+                  // DO NOT let it fall through and get handled by catch-all
+                  // because filename may be recognized as a asm file
+                  argsOK = false;
+                  continue; 
                }
+            }
+            if (args[i].equalsIgnoreCase("ig")) { // added 5-Nov-2022, by Toby to ignore arithmetic overflow.
+               Globals.ignoreArithmeticOverflow = true;
+               continue;
             }
          
          
@@ -880,6 +889,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          out.println("    coL1  -- set display level at 1 (print std answer).");
          out.println("    coL2  -- set display level at 2 (print std debug messages).");
          out.println("      cl <class> -- load an additional instruction from a .class file.");
+         out.println("             Note that your .class file must be in the same directory as mars.jar.");
+         out.println("      ig  -- ignore arithmetic overflow.");
       }
    
    }
