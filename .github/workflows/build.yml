@@ -42,7 +42,7 @@ jobs:
     - name: pre test
       shell: cmd
       run: |
-        move Mars_CO_${{  github.ref_name }}.jar test\mars.jar
+        copy Mars_CO_${{  github.ref_name }}.jar test\mars.jar
 
     - name: Test1
       shell: cmd
