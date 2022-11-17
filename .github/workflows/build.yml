@@ -58,6 +58,13 @@ jobs:
         java -jar mars.jar a code2.asm mc CompactLargeText ig dump .text HexText testTemp.txt
         fc testTemp.txt stdout2.txt
 
+    - name: Test3
+      shell: cmd
+      run: |
+        cd test
+        java -jar mars.jar code3.asm mc CompactLargeText nc db coL1 > stdout3.txt
+        fc testTemp.txt stdout3.txt
+
     - name: Create a release
       uses: softprops/action-gh-release@v1
       with:

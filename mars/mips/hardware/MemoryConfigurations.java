@@ -155,10 +155,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          0x00003000, // .text Base Address
          0x00000000, // Data Segment base address
          0x00001000, // .extern Base Address
-         0x00001800, // Global Pointer $gp)
+         0x00000000, // Global Pointer $gp)
          0x00000000, // .data base Address
          0x00002000, // heap base address
-         0x00002ffc, // stack pointer $sp 
+         0x00000000, // stack pointer $sp 
          0x00002ffc, // stack base address
          0x00006fff, // highest address in user space
          0x00007000, // lowest address in kernel space
