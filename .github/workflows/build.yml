@@ -39,6 +39,32 @@ jobs:
         move MarsTest.zip ..\Mars_Test_CO_${{  github.ref_name }}.zip
         cd ..
 
+    - name: pre test
+      shell: cmd
+      run: |
+        copy Mars_CO_${{  github.ref_name }}.jar test\mars.jar
+
+    - name: Test1
+      shell: cmd
+      run: |
+        cd test
+        java -jar mars.jar code1.asm mc CompactLargeText coL1 cl bhelbal.class ig > testTemp.txt
+        fc testTemp.txt stdout1.txt
+
+    - name: Test2
+      shell: cmd
+      run: |
+        cd test
+        java -jar mars.jar a code2.asm mc CompactLargeText ig dump .text HexText testTemp.txt
+        fc testTemp.txt stdout2.txt
+
+    - name: Test3
+      shell: cmd
+      run: |
+        cd test
+        java -jar mars.jar code3.asm mc CompactLargeText nc db coL1 > stdout3.txt
+        fc testTemp.txt stdout3.txt
+
     - name: Create a release
       uses: softprops/action-gh-release@v1
       with:
@@ -46,11 +72,3 @@ jobs:
           Mars_CO_${{  github.ref_name }}.jar
           Mars_Test_CO_${{  github.ref_name }}.zip
         draft: true
-
-    - name: Test
-      shell: cmd
-      run: |
-        move Mars_CO_${{  github.ref_name }}.jar test\mars.jar
-        cd test
-        java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl bhelbal.class ig > testTemp.txt
-        fc testTemp.txt stdout.txt
