@@ -77,7 +77,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       		  settingsDelayedBranching, settingsProgramArguments, settingsSelfModifyingCode;
       private JMenuItem settingsExceptionHandler, settingsEditor, settingsHighlighting, settingsMemoryConfiguration;
       private JMenuItem settingsLoadAdditionalInstruction;
-      private JCheckBoxMenuItem settingsOutputLogLevel1, settingsOutputLogLevel2;
+      private JCheckBoxMenuItem settingsOutputLogLevel1, settingsOutputLogLevel2, settingsIgnoreArithmeticOverflow;
       private JMenuItem helpHelp, helpAbout;
          
       // components of the toolbar
@@ -102,7 +102,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       					settingsWarningsAreErrorsAction, settingsStartAtMainAction, settingsProgramArgumentsAction,
       					settingsDelayedBranchingAction, settingsExceptionHandlerAction, settingsEditorAction,
       					settingsHighlightingAction, settingsMemoryConfigurationAction, settingsSelfModifyingCodeAction;    
-      private Action helpHelpAction, helpAboutAction, settingsLoadAdditionalInstructionAction;
+      private Action helpHelpAction, helpAboutAction, settingsLoadAdditionalInstructionAction, settingsIgnoreArithmeticOverflowAction;
    
    
     /**
@@ -450,10 +450,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                									  KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0),
                									  mainUI);	
             helpAboutAction = new HelpAboutAction("About ...",null, 
-                                            "Information about Mars", null,null, mainUI);	
+                                            "Information about Mars", null,null, mainUI);
             settingsLoadAdditionalInstructionAction = new SettingsLoadAdditionalInstructionAction("Load Instruction",
                                             null,
                                             "Load Additional Instruction",
+                                            null, null,
+                                            mainUI);
+            settingsIgnoreArithmeticOverflowAction = new SettingsIgnoreArithmeticOverflowAction("Ignore Arithmetic Overflow",
+                                            null,
+                                            "Ignore Arithmetic Overflow (including add, sub, addi)",
                                             null, null,
                                             mainUI);
          } 
@@ -623,6 +628,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             "Output Log Level 2", null, "Set Output Log to Level 2",
             null, null, mainUI, settingsOutputLogLevel1, 2
          ));
+         settingsIgnoreArithmeticOverflow = new JCheckBoxMenuItem(settingsIgnoreArithmeticOverflowAction);
 
          settings.add(settingsLabel);
          settings.add(settingsProgramArguments);
@@ -645,6 +651,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          settings.add(settingsMemoryConfiguration);
          settings.addSeparator();
          settings.add(settingsLoadAdditionalInstruction);
+         settings.add(settingsIgnoreArithmeticOverflow);
          settings.add(settingsOutputLogLevel1);
          settings.add(settingsOutputLogLevel2);
 

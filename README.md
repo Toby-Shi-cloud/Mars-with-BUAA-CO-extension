@@ -14,6 +14,7 @@
 
 1. 支持输出课程实验要求 CPU 输出的内容，因此能方便与自己的 CPU 进行测试/对拍。
 2. 新增支持：加载额外的指令！
+3. 重大更新：在 0.4.0 以后，所有新增内容可在图形界面使用！
 
 ## 如何使用？
 
@@ -25,11 +26,13 @@
 2. `coL1`：打印寄存器修改和内存修改信息，与 `P4` 要求相同
 3. `coL2`：打印额外信息，方便逐步查错和调试
 4. `mc CompactLargeText`: 在原版 `mc CompactDataAtZero` 的基础上支持多达 $4096$ 条 $32$ 位机器码（此设置可在 `GUI` 界面使用）
-5. `cl <class>`：加载 `.class` 文件以支持额外的指令。
+5. `ig`：忽略全部算术溢出
+6. `cl <class>`：加载 `.class` 文件以支持额外的指令。
 > 请务必把 `.class` 文件和 `Mars.jar` 放在相同目录下。
 > 
-> 若要创建受支持的 `.class` 文件，你的 `class` 必须实现 `mars.mips.instructions.AdditionalInstruction` 接口。详细示例请见源码中的 `bhelbal.java`，`adduo.java`，和 `subuo.java`。
-6. `ig`：忽略全部算术溢出
+> 若要创建受支持的 `.class` 文件，你的 `class` 必须实现 `mars.mips.instructions.AdditionalInstruction` 接口。详细示例请见源码中的 `bhelbal.java`。
+>
+> 详细教程可能会在不久后给出，就敬请期待。
 
 ### 运行示例
 
