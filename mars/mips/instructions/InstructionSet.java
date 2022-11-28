@@ -422,7 +422,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                }));
          instructionList.add(
                 new BasicInstruction("mthi $t1", 
-            	 "Move to HI registerr : Set HI to contents of $t1 (see multiply and divide operations)",
+            	 "Move to HI register : Set HI to contents of $t1 (see multiply and divide operations)",
             	 BasicInstructionFormat.R_FORMAT,
                 "000000 fffff 00000 00000 00000 010001",
                 new SimulationCode()

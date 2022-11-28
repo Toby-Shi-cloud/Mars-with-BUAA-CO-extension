@@ -187,7 +187,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             configurations.add(new MemoryConfiguration("Default", "Default", configurationItemNames, defaultConfigurationItemValues));
             configurations.add(new MemoryConfiguration("CompactDataAtZero", "Compact, Data at Address 0", configurationItemNames, dataBasedCompactConfigurationItemValues));
             configurations.add(new MemoryConfiguration("CompactTextAtZero", "Compact, Text at Address 0", configurationItemNames, textBasedCompactConfigurationItemValues));
-            configurations.add(new MemoryConfiguration("CompactLargeText", "Large Text, Data at Address 0", configurationItemNames, largeTextCompactConfigurationItemValues));
+            configurations.add(new MemoryConfiguration("CompactLargeText", "Compact, Large Text", configurationItemNames, largeTextCompactConfigurationItemValues));
             defaultConfiguration = (MemoryConfiguration) configurations.get(0);
             currentConfiguration = defaultConfiguration;
          	// Get current config from settings

@@ -356,20 +356,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     
    // Allocates blocks if necessary.
        public int set(int address, int value, int length) throws AddressErrorException {
-         // $display("*%h <= %h", pc, addr, din);
-         Globals.displayDMchanging = String.format("*%08x <= %08x", address, value);
+         // set output to load value
+         int outputValue = 0;
          int oldValue = 0;
          if (Globals.debug) System.out.println("memory["+address+"] set to "+value+"("+length+" bytes)");
          int relativeByteAddress;
          if (inDataSegment(address)) {
            // in data segment.  Will write one byte at a time, w/o regard to boundaries.
             relativeByteAddress = address - dataSegmentBaseAddress; // relative to data segment start, in bytes
+            outputValue = fetchBytesFromTable(dataBlockTable, relativeByteAddress >> 2 << 2, 4);
             oldValue = storeBytesInTable(dataBlockTable, relativeByteAddress, length, value);
          } 
          else if (address > stackLimitAddress && address <= stackBaseAddress) {
            // in stack.  Handle similarly to data segment write, except relative byte
            // address calculated "backward" because stack addresses grow down from base.
             relativeByteAddress = stackBaseAddress - address; 
+            outputValue = fetchBytesFromTable(stackBlockTable, relativeByteAddress >> 2 << 2, 4);
             oldValue = storeBytesInTable(stackBlockTable, relativeByteAddress, length, value);
          } 
          else if (inTextSegment(address)) {
@@ -392,11 +394,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          else if (address >= memoryMapBaseAddress && address < memoryMapLimitAddress) {
            // memory mapped I/O.
             relativeByteAddress = address - memoryMapBaseAddress;
+            outputValue = fetchBytesFromTable(memoryMapBlockTable, relativeByteAddress >> 2 << 2, 4);
             oldValue = storeBytesInTable(memoryMapBlockTable, relativeByteAddress, length, value);
          }
          else if (inKernelDataSegment(address)) {
            // in kernel data segment.  Will write one byte at a time, w/o regard to boundaries.
             relativeByteAddress = address - kernelDataBaseAddress; // relative to data segment start, in bytes
+            outputValue = fetchBytesFromTable(kernelDataBlockTable, relativeByteAddress >> 2 << 2, 4);
             oldValue = storeBytesInTable(kernelDataBlockTable, relativeByteAddress, length, value);
          } 
          else if (inKernelTextSegment(address)) {
@@ -411,6 +415,28 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                Exceptions.ADDRESS_EXCEPTION_STORE, address);
          }
          notifyAnyObservers(AccessNotice.WRITE, address, length, value);
+         // $display("*%h <= %h", pc, addr, din);
+         // 2022-11-28: Output word alignment
+         if (length == 4) {
+            outputValue = value;
+         } else if (length == 2) {
+            if ((address & 0b10) == 0) {
+               outputValue &= 0xffff0000;
+               outputValue |= value;
+            } else {
+               outputValue &= 0x0000ffff;
+               outputValue |= value << 16;
+            }
+         } else if (length == 1) {
+            int bitPosition = (address & 0b11) << 3;
+            outputValue &= ~(0x0000ff << bitPosition);
+            outputValue |= value << bitPosition;
+         } else {
+            // Supposed to be impossible.
+            if (Globals.displayLevel != 0)
+               throw new AddressErrorException("store length not support", Exceptions.ADDRESS_EXCEPTION_STORE, address);
+         }
+         Globals.displayDMchanging = String.format("*%08x <= %08x", address >> 2 << 2, outputValue);
          return oldValue;
       }
    	
