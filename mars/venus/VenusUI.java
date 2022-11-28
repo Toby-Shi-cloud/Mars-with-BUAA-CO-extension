@@ -76,6 +76,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
               settingsExtended, settingsAssembleOnOpen, settingsAssembleAll, settingsWarningsAreErrors, settingsStartAtMain,
       		  settingsDelayedBranching, settingsProgramArguments, settingsSelfModifyingCode;
       private JMenuItem settingsExceptionHandler, settingsEditor, settingsHighlighting, settingsMemoryConfiguration;
+      private JMenuItem settingsLoadAdditionalInstruction;
+      private JCheckBoxMenuItem settingsOutputLogLevel1, settingsOutputLogLevel2;
       private JMenuItem helpHelp, helpAbout;
          
       // components of the toolbar
@@ -100,7 +102,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       					settingsWarningsAreErrorsAction, settingsStartAtMainAction, settingsProgramArgumentsAction,
       					settingsDelayedBranchingAction, settingsExceptionHandlerAction, settingsEditorAction,
       					settingsHighlightingAction, settingsMemoryConfigurationAction, settingsSelfModifyingCodeAction;    
-      private Action helpHelpAction, helpAboutAction;
+      private Action helpHelpAction, helpAboutAction, settingsLoadAdditionalInstructionAction;
    
    
     /**
@@ -139,7 +141,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          if (im == null) {
             System.out.println("Internal Error: images folder or file not found");
             System.exit(0);
-         }				
+         }
          Image mars = Toolkit.getDefaultToolkit().getImage(im);
          this.setIconImage(mars);
       	// Everything in frame will be arranged on JPanel "center", which is only frame component.
@@ -449,6 +451,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                									  mainUI);	
             helpAboutAction = new HelpAboutAction("About ...",null, 
                                             "Information about Mars", null,null, mainUI);	
+            settingsLoadAdditionalInstructionAction = new SettingsLoadAdditionalInstructionAction("Load Instruction",
+                                            null,
+                                            "Load Additional Instruction",
+                                            null, null,
+                                            mainUI);
          } 
              catch (NullPointerException e) {
                System.out.println("Internal Error: images folder not found, or other null pointer exception while creating Action objects");
@@ -516,7 +523,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          file.add(filePrint);
          file.addSeparator();
          file.add(fileExit);
-      	
+
          editUndo = new JMenuItem(editUndoAction);
          editUndo.setIcon(new ImageIcon(tk.getImage(cs.getResource(Globals.imagesPath+"Undo16.png"))));//"Undo16.gif"))));
          editRedo = new JMenuItem(editRedoAction);
@@ -570,7 +577,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          run.addSeparator();
          run.add(runClearBreakpoints);
          run.add(runToggleBreakpoints);
-      	
+
          settingsLabel = new JCheckBoxMenuItem(settingsLabelAction);
          settingsLabel.setSelected(Globals.getSettings().getLabelWindowVisibility());
          settingsPopupInput = new JCheckBoxMenuItem(settingsPopupInputAction);
@@ -603,7 +610,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          settingsHighlighting = new JMenuItem(settingsHighlightingAction);
          settingsExceptionHandler = new JMenuItem(settingsExceptionHandlerAction);
          settingsMemoryConfiguration = new JMenuItem(settingsMemoryConfigurationAction);
-      	
+         settingsLoadAdditionalInstruction = new JMenuItem(settingsLoadAdditionalInstructionAction);
+         settingsOutputLogLevel1 = new JCheckBoxMenuItem();
+         settingsOutputLogLevel1.setSelected(Globals.displayLevel == 1);
+         settingsOutputLogLevel2 = new JCheckBoxMenuItem();
+         settingsOutputLogLevel2.setSelected(Globals.displayLevel == 2);
+         settingsOutputLogLevel1.setAction(new SettingsOutputLogLevelAction(
+            "Output Log Level 1", null, "Set Output Log to Level 1",
+            null, null, mainUI, settingsOutputLogLevel2, 1
+         ));
+         settingsOutputLogLevel2.setAction(new SettingsOutputLogLevelAction(
+            "Output Log Level 2", null, "Set Output Log to Level 2",
+            null, null, mainUI, settingsOutputLogLevel1, 2
+         ));
+
          settings.add(settingsLabel);
          settings.add(settingsProgramArguments);
          settings.add(settingsPopupInput);
@@ -623,7 +643,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          settings.add(settingsHighlighting);
          settings.add(settingsExceptionHandler);
          settings.add(settingsMemoryConfiguration);
-      			
+         settings.addSeparator();
+         settings.add(settingsLoadAdditionalInstruction);
+         settings.add(settingsOutputLogLevel1);
+         settings.add(settingsOutputLogLevel2);
+
          helpHelp = new JMenuItem(helpHelpAction);
          helpHelp.setIcon(new ImageIcon(tk.getImage(cs.getResource(Globals.imagesPath+"Help16.png"))));//"Help16.gif"))));
          helpAbout = new JMenuItem(helpAboutAction);
@@ -639,10 +663,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          JMenu toolMenu = new ToolLoader().buildToolsMenu();
          if (toolMenu != null) menuBar.add(toolMenu);
          menuBar.add(help);
-      	
+
       	// experiment with popup menu for settings. 3 Aug 2006 PS
          //setupPopupMenu();
-      	
+
          return menuBar;
       }
    

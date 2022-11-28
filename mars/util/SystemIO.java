@@ -187,6 +187,27 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       
       }
    	
+
+      /**
+       * Print log at runtime, support coL1 & coL2.
+       * @version
+       * BUAA CO v0.4.0. 29-Nov-2022.
+       * @author
+       * Toby
+       */
+      public static void printLog(String string)
+      {
+         
+         if (Globals.getGui() == null)
+         {
+            Globals.displayOutput.print(string);
+         } 
+         else
+         {
+            Globals.getGui().getMessagesPane().postRunMessage(string);
+         }
+      }
+
    	
     /**
      * Implements syscall to read a string.

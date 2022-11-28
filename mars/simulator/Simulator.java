@@ -347,29 +347,29 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      Globals.displayDMchanging = null;
                      instruction.getSimulationCode().simulate(statement);
                      if (Globals.displayLevel == 2) { // added 1-Nov-2022, by Toby to support BUAA CO.
-                        Globals.displayOutput.printf("@PC%08x -> %s (%08x)%n",
+                        SystemIO.printLog(String.format("@PC%08x -> %s (%08x)\n",
                            pc,
                            statement.getBasicAssemblyStatement(),
                            Integer.parseUnsignedInt(statement.getMachineStatement(), 2)
-                        );
+                        ));
                         if (Globals.displayRFchanging != null) {
-                           Globals.displayOutput.println("\t\t" + Globals.displayRFchanging);
+                           SystemIO.printLog("\t\t" + Globals.displayRFchanging + '\n');
                         }
                         if (Globals.displayDMchanging != null) {
-                           Globals.displayOutput.println("\t\t" + Globals.displayDMchanging);
+                           SystemIO.printLog("\t\t" + Globals.displayDMchanging + '\n');
                         }
                      } else if (Globals.displayLevel == 1) {
                         if (Globals.displayRFchanging != null) {
-                           Globals.displayOutput.printf("@%08x: %s%n",
+                           SystemIO.printLog(String.format("@%08x: %s\n",
                               pc,
                               Globals.displayRFchanging
-                           );
+                           ));
                         }
                         if (Globals.displayDMchanging != null) {
-                           Globals.displayOutput.printf("@%08x: %s%n",
+                           SystemIO.printLog(String.format("@%08x: %s\n",
                               pc,
                               Globals.displayDMchanging
-                           );
+                           ));
                         }
                      }
                   	
