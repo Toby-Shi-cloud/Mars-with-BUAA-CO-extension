@@ -67,21 +67,28 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          setBounds(x,y,width,height);
          
          // Build the splash screen
-         JLabel title = new JLabel("MARS: Mips Assembler and Runtime Simulator", JLabel.CENTER);      
-         JLabel copyrt1 = new JLabel
-               ("<html><br><br>Version "+Globals.version+" Copyright (c) "+Globals.copyrightYears+"</html>", JLabel.CENTER);
-         JLabel copyrt2 = new JLabel
-               ("<html><br><br>"+Globals.copyrightHolders+"</html>", JLabel.CENTER);
-         title.setFont(new Font("Sans-Serif", Font.BOLD, 16));
-         title.setForeground(Color.black);
-         copyrt1.setFont(new Font("Sans-Serif", Font.BOLD, 14));
-         copyrt2.setFont(new Font("Sans-Serif", Font.BOLD, 14));
-         copyrt1.setForeground(Color.white);
-         copyrt2.setForeground(Color.white);
+         // JLabel extensionTitle = new JLabel("MARS CO v" + Globals.extensionVersion, JLabel.RIGHT);
+         // JLabel extensionAuthor = new JLabel("<html><br>by Toby Shi</html>", JLabel.RIGHT);
+         // extensionTitle.setFont(new Font("Sans-Serif", Font.BOLD, 16));
+         // extensionAuthor.setFont(new Font("Sans-Serif", Font.BOLD, 16));
+         // content.add(extensionTitle);
+         // content.add(extensionAuthor);
 
-			content.add(title,BorderLayout.NORTH);
-			content.add(copyrt1,BorderLayout.CENTER);
-			content.add(copyrt2,BorderLayout.SOUTH);
+         // JLabel title = new JLabel("MARS: Mips Assembler and Runtime Simulator", JLabel.CENTER);      
+         // JLabel copyrt1 = new JLabel
+         //       ("<html><br><br>Version "+Globals.version+" Copyright (c) "+Globals.copyrightYears+"</html>", JLabel.CENTER);
+         // JLabel copyrt2 = new JLabel
+         //       ("<html><br><br>"+Globals.copyrightHolders+"</html>", JLabel.CENTER);
+         // title.setFont(new Font("Sans-Serif", Font.BOLD, 16));
+         // title.setForeground(Color.black);
+         // copyrt1.setFont(new Font("Sans-Serif", Font.BOLD, 14));
+         // copyrt2.setFont(new Font("Sans-Serif", Font.BOLD, 14));
+         // copyrt1.setForeground(Color.white);
+         // copyrt2.setForeground(Color.white);
+
+			// content.add(title,BorderLayout.NORTH);
+			// content.add(copyrt1,BorderLayout.CENTER);
+			// content.add(copyrt2,BorderLayout.SOUTH);
 
          // Display it
          setVisible(true);
@@ -98,7 +105,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          {
             try
             {
-				   image = new ImageIcon(Toolkit.getDefaultToolkit().getImage(this.getClass().getResource(Globals.imagesPath+"MarsSurfacePathfinder.jpg"))).getImage();
+				   image = new ImageIcon(Toolkit.getDefaultToolkit().getImage(this.getClass().getResource(Globals.imagesPath+"Nahida.png"))).getImage();
             }
                 catch (Exception e) {System.out.println(e); /*handled in paintComponent()*/ }
          }
