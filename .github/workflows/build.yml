@@ -48,7 +48,7 @@ jobs:
       shell: cmd
       run: |
         cd test
-        java -jar mars.jar code1.asm mc CompactLargeText coL1 cl bhelbal.class ig > testTemp.txt
+        java -jar mars.jar code1.asm mc nc CompactLargeText coL1 cl bhelbal.class ig > testTemp.txt
         fc testTemp.txt stdout1.txt
 
     - name: Test2
