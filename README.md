@@ -1,7 +1,4 @@
 [![GitHub release](https://img.shields.io/github/release/Toby-Shi-cloud/Mars-with-BUAA-CO-extension.svg)](https://GitHub.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/releases/)
-[![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg)
-[![macOS](https://svgshare.com/i/ZjP.svg)](https://svgshare.com/i/ZjP.svg)
-[![Windows](https://svgshare.com/i/ZhY.svg)](https://svgshare.com/i/ZhY.svg)
 [![Build Jar](https://github.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/actions/workflows/build.yml/badge.svg)](https://github.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/actions/workflows/build.yml)
 
 ## 这是什么？
@@ -52,4 +49,4 @@ java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl bhelbal.class ig
 
 请务必遵守[原版 Mars 版权声明](MARSlicense.txt)。
 
-本扩展无版权声明，可以随意下载使用或修改，前提是声明出处，并保留源代码中的`版本信息`
+本扩展和原版一致使用 MIT 协议。
