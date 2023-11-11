@@ -362,15 +362,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
 
       public void setOutputLoggingLevel(int level) {
-          String l;
-          if (level == 1) {
-              l = "1";
-          } else if (level == 2) {
-              l = "2";
+          if (0 <= level && level <= 2) {
+              setStringSetting(OUTPUT_LOGGING_LEVEL, "" + level);
           } else {
-              l = "0";
+              setStringSetting(OUTPUT_LOGGING_LEVEL, "0");
           }
-          setStringSetting(OUTPUT_LOGGING_LEVEL, l);
       }
    
        public void setEditorSyntaxStyleByPosition( int index, SyntaxStyle syntaxStyle ) {
