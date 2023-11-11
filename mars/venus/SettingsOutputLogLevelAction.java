@@ -23,13 +23,13 @@ public class SettingsOutputLogLevelAction extends GuiAction {
     public void actionPerformed(ActionEvent e) {
         boolean selected = ((JCheckBoxMenuItem) e.getSource()).isSelected();
         if (selected) {
-            Globals.displayLevel = level;
+            Globals.getSettings().setOutputLoggingLevel(level);
             if (associated != null) {
                 associated.setSelected(false);
             }
         } else {
-            if (Globals.displayLevel == level) {
-                Globals.displayLevel = 0;
+            if (Globals.getSettings().getOutputLoggingLevel() == level) {
+                Globals.getSettings().setOutputLoggingLevel(0);
             }
         }
     }

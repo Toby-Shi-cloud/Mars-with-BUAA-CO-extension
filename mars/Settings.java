@@ -147,16 +147,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       public static final int EDITOR_TAB_SIZE = 5;
    	/** Number of letters to be matched by editor's instruction guide before popup generated (if popup enabled) */
       public static final int EDITOR_POPUP_PREFIX_LENGTH = 6;
+      public static final int OUTPUT_LOGGING_LEVEL = 7;
    	// Match the above by position.
-      private static final String[] stringSettingsKeys = { "ExceptionHandler", "TextColumnOrder", "LabelSortState", "MemoryConfiguration", "CaretBlinkRate", "EditorTabSize", "EditorPopupPrefixLength" };
+      private static final String[] stringSettingsKeys = { "ExceptionHandler", "TextColumnOrder", "LabelSortState", "MemoryConfiguration", "CaretBlinkRate", "EditorTabSize", "EditorPopupPrefixLength", "OutputLoggingLevel" };
    
       /** Last resort default values for String settings; 
    	 *  will use only if neither the Preferences nor the properties file work.
    	 *  If you wish to change, do so before instantiating the Settings object.
    	 *  Must match key by list position.
    	 */
-      private static String[] defaultStringSettingsValues = { "", "0 1 2 3 4", "0", "", "500", "8", "2" }; 
-   
+      private static String[] defaultStringSettingsValues = { "", "0 1 2 3 4", "0", "", "500", "8", "2", "0" };
    
       // FONT SETTINGS.  Each array position has associated name.
    	/** Font for the text editor */
@@ -349,6 +349,28 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
       public void setIgnoreArithmeticOverflow(boolean value) {
           internalSetBooleanSetting(IGNORE_ARITHMETIC_OVERFLOW, value);
+      }
+
+      public int getOutputLoggingLevel() {
+          if (Objects.equals(stringSettingsValues[OUTPUT_LOGGING_LEVEL], "1")) {
+              return 1;
+          }
+          if (Objects.equals(stringSettingsValues[OUTPUT_LOGGING_LEVEL], "2")) {
+              return 2;
+          }
+          return 0;
+      }
+
+      public void setOutputLoggingLevel(int level) {
+          String l;
+          if (level == 1) {
+              l = "1";
+          } else if (level == 2) {
+              l = "2";
+          } else {
+              l = "0";
+          }
+          setStringSetting(OUTPUT_LOGGING_LEVEL, l);
       }
    
        public void setEditorSyntaxStyleByPosition( int index, SyntaxStyle syntaxStyle ) {
@@ -1000,6 +1022,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          else {
             throw new IllegalArgumentException("Invalid boolean setting ID");
          } 
+      }
+
+      public void setStringSettingNonPersistent(int id, String value) {
+           if (id >= 0 && id < stringSettingsKeys.length) {
+               stringSettingsValues[id] = value;
+           }
+           else {
+               throw new IllegalArgumentException("Invalid string setting ID");
+           }
       }
     
    	
