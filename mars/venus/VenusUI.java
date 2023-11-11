@@ -629,6 +629,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             null, null, mainUI, settingsOutputLogLevel1, 2
          ));
          settingsIgnoreArithmeticOverflow = new JCheckBoxMenuItem(settingsIgnoreArithmeticOverflowAction);
+         settingsIgnoreArithmeticOverflow.setSelected(Globals.getSettings().getIgnoreArithmeticOverflow());
 
          settings.add(settingsLabel);
          settings.add(settingsProgramArguments);

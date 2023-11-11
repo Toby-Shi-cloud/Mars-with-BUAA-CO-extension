@@ -104,7 +104,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       /** display level, 0 (default) if print none, 1 if print std ans, 2 if print std debug */
       public static int displayLevel = 0;
       /** ignore arithmetic overflow if true */
-      public static boolean ignoreArithmeticOverflow = false;
+//      public static boolean ignoreArithmeticOverflow = false;
 
    	
       public static boolean runSpeedPanelExists = false;

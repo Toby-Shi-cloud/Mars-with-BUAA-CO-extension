@@ -116,6 +116,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       private boolean startAtMain; // Whether to start execution at statement labeled 'main' 
       private boolean countInstructions; // Whether to count and report number of instructions executed 
       private boolean selfModifyingCode; // Whether to allow self-modifying code (e.g. write to text segment)
+      private boolean ignoreArithmeticOverflow;  // Whether to ignore the arithmetic overflow
       private static final String rangeSeparator = "-";
       private static final int splashDuration = 2000; // time in MS to show splash screen
       private static final int memoryWordsPerLine = 4; // display 4 memory words, tab separated, per line
@@ -151,6 +152,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             delayedBranching = false;
             warningsAreErrors = false;
             startAtMain = false;
+            ignoreArithmeticOverflow = false;
             countInstructions = false;
 				selfModifyingCode = false;
             instructionCount = 0;
@@ -445,7 +447,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                }
             }
             if (args[i].equalsIgnoreCase("ig")) { // added 5-Nov-2022, by Toby to ignore arithmetic overflow.
-               Globals.ignoreArithmeticOverflow = true;
+               ignoreArithmeticOverflow = true;
                continue;
             }
          
@@ -512,6 +514,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          try {
             Globals.getSettings().setBooleanSettingNonPersistent(Settings.DELAYED_BRANCHING_ENABLED, delayedBranching);
             Globals.getSettings().setBooleanSettingNonPersistent(Settings.SELF_MODIFYING_CODE_ENABLED, selfModifyingCode);
+            Globals.getSettings().setBooleanSettingNonPersistent(Settings.IGNORE_ARITHMETIC_OVERFLOW, ignoreArithmeticOverflow);
             File mainFile = new File((String) filenameList.get(0)).getAbsoluteFile();// First file is "main" file
             ArrayList filesToAssemble;
             if (assembleProject) { 
