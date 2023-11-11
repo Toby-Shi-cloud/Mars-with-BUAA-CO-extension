@@ -116,6 +116,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       private boolean startAtMain; // Whether to start execution at statement labeled 'main' 
       private boolean countInstructions; // Whether to count and report number of instructions executed 
       private boolean selfModifyingCode; // Whether to allow self-modifying code (e.g. write to text segment)
+      private boolean ignoreArithmeticOverflow;  // Whether to ignore the arithmetic overflow
+      private int outputLoggingLevel;  // The output logging level: 0, 1 or 2
       private static final String rangeSeparator = "-";
       private static final int splashDuration = 2000; // time in MS to show splash screen
       private static final int memoryWordsPerLine = 4; // display 4 memory words, tab separated, per line
@@ -151,6 +153,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             delayedBranching = false;
             warningsAreErrors = false;
             startAtMain = false;
+            ignoreArithmeticOverflow = false;
+            outputLoggingLevel = 0;
             countInstructions = false;
 				selfModifyingCode = false;
             instructionCount = 0;
@@ -412,18 +416,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                continue;
             }
             if (args[i].equalsIgnoreCase("coL1")) {
-               if (Globals.displayLevel != 0) {
+               if (outputLoggingLevel != 0) {
                   // Let it fall thru and get handled by catch-all
                } else {
-                  Globals.displayLevel = 1;
+                  outputLoggingLevel = 1;
                   continue;
                }
             }
             if (args[i].equalsIgnoreCase("coL2")) {
-               if (Globals.displayLevel != 0) {
+               if (outputLoggingLevel != 0) {
                   // Let it fall thru and get handled by catch-all
                } else {
-                  Globals.displayLevel = 2;
+                  outputLoggingLevel = 2;
                   continue;
                }
             }
@@ -445,7 +449,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                }
             }
             if (args[i].equalsIgnoreCase("ig")) { // added 5-Nov-2022, by Toby to ignore arithmetic overflow.
-               Globals.ignoreArithmeticOverflow = true;
+               ignoreArithmeticOverflow = true;
                continue;
             }
          
@@ -512,6 +516,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          try {
             Globals.getSettings().setBooleanSettingNonPersistent(Settings.DELAYED_BRANCHING_ENABLED, delayedBranching);
             Globals.getSettings().setBooleanSettingNonPersistent(Settings.SELF_MODIFYING_CODE_ENABLED, selfModifyingCode);
+            Globals.getSettings().setBooleanSettingNonPersistent(Settings.IGNORE_ARITHMETIC_OVERFLOW, ignoreArithmeticOverflow);
+            Globals.getSettings().setStringSettingNonPersistent(Settings.OUTPUT_LOGGING_LEVEL, "" + outputLoggingLevel);
             File mainFile = new File((String) filenameList.get(0)).getAbsoluteFile();// First file is "main" file
             ArrayList filesToAssemble;
             if (assembleProject) { 

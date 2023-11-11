@@ -433,7 +433,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             outputValue |= value << bitPosition;
          } else {
             // Supposed to be impossible.
-            if (Globals.displayLevel != 0)
+            if (Globals.getSettings().getOutputLoggingLevel() != 0)
                throw new AddressErrorException("store length not support", Exceptions.ADDRESS_EXCEPTION_STORE, address);
          }
          Globals.displayDMchanging = String.format("*%08x <= %08x", address >> 2 << 2, outputValue);
