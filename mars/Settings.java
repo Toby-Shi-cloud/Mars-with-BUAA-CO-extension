@@ -1,8 +1,7 @@
    package mars;
-   import mars.*;
    import mars.util.*;
    import mars.venus.editors.jeditsyntax.*;
-   import java.io.*;
+
    import java.util.*;
    import java.util.prefs.*;
    import java.awt.Color;
@@ -111,7 +110,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       public static final int AUTO_INDENT = 19;
     /** Flag to determine whether a program can write binary code to the text or data segment and
         execute that code.  */
-      public static final int SELF_MODIFYING_CODE_ENABLED = 20;	
+      public static final int SELF_MODIFYING_CODE_ENABLED = 20;
+       /**  Flag to ignore the arithmetic overflow */
+      public static final int IGNORE_ARITHMETIC_OVERFLOW = 21;
    
       // NOTE: key sequence must match up with labels above which are used for array indexes!
       private static String[] booleanSettingsKeys = {"ExtendedAssembler", "BareMachine", "AssembleOnOpen", "AssembleAll",
@@ -120,7 +121,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          												"WarningsAreErrors", "ProgramArguments", "DataSegmentHighlighting",
          												"RegistersHighlighting", "StartAtMain", "EditorCurrentLineHighlighting",
          												"PopupInstructionGuidance", "PopupSyscallInput", "GenericTextEditor", 
-         												"AutoIndent", "SelfModifyingCode" };
+         												"AutoIndent", "SelfModifyingCode", "IgnoreArithmeticOverflow" };
    
       /** Last resort default values for boolean settings; will use only  if neither
    	 *  the Preferences nor the properties file work. If you wish to change them, 
@@ -129,7 +130,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    	 */
       public static boolean[] defaultBooleanSettingsValues = { // match the above list by position
                                               true, false, false, false, false, true, true, false, false, 
-         												 true, false, false, true, true, false, true, true, false, false, true, false };
+         												 true, false, false, true, true, false, true, true, false, false, true, false, false };
    
       // STRING SETTINGS.  Each array position has associated name.
    	/** Current specified exception handler file (a MIPS assembly source file) */
@@ -146,16 +147,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       public static final int EDITOR_TAB_SIZE = 5;
    	/** Number of letters to be matched by editor's instruction guide before popup generated (if popup enabled) */
       public static final int EDITOR_POPUP_PREFIX_LENGTH = 6;
+      public static final int OUTPUT_LOGGING_LEVEL = 7;
    	// Match the above by position.
-      private static final String[] stringSettingsKeys = { "ExceptionHandler", "TextColumnOrder", "LabelSortState", "MemoryConfiguration", "CaretBlinkRate", "EditorTabSize", "EditorPopupPrefixLength" };
+      private static final String[] stringSettingsKeys = { "ExceptionHandler", "TextColumnOrder", "LabelSortState", "MemoryConfiguration", "CaretBlinkRate", "EditorTabSize", "EditorPopupPrefixLength", "OutputLoggingLevel" };
    
       /** Last resort default values for String settings; 
    	 *  will use only if neither the Preferences nor the properties file work.
    	 *  If you wish to change, do so before instantiating the Settings object.
    	 *  Must match key by list position.
    	 */
-      private static String[] defaultStringSettingsValues = { "", "0 1 2 3 4", "0", "", "500", "8", "2" }; 
-   
+      private static String[] defaultStringSettingsValues = { "", "0 1 2 3 4", "0", "", "500", "8", "2", "0" };
    
       // FONT SETTINGS.  Each array position has associated name.
    	/** Font for the text editor */
@@ -341,7 +342,32 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       private static String[] defaultSyntaxStyleColorSettingsValues;
       private static boolean[] defaultSyntaxStyleBoldSettingsValues;
       private static boolean[] defaultSyntaxStyleItalicSettingsValues;
-   
+
+      public boolean getIgnoreArithmeticOverflow() {
+            return booleanSettingsValues[IGNORE_ARITHMETIC_OVERFLOW];
+      }
+
+      public void setIgnoreArithmeticOverflow(boolean value) {
+          internalSetBooleanSetting(IGNORE_ARITHMETIC_OVERFLOW, value);
+      }
+
+      public int getOutputLoggingLevel() {
+          if (Objects.equals(stringSettingsValues[OUTPUT_LOGGING_LEVEL], "1")) {
+              return 1;
+          }
+          if (Objects.equals(stringSettingsValues[OUTPUT_LOGGING_LEVEL], "2")) {
+              return 2;
+          }
+          return 0;
+      }
+
+      public void setOutputLoggingLevel(int level) {
+          if (0 <= level && level <= 2) {
+              setStringSetting(OUTPUT_LOGGING_LEVEL, "" + level);
+          } else {
+              setStringSetting(OUTPUT_LOGGING_LEVEL, "0");
+          }
+      }
    
        public void setEditorSyntaxStyleByPosition( int index, SyntaxStyle syntaxStyle ) {
          syntaxStyleColorSettingsValues[index] = syntaxStyle.getColorAsHexString();
@@ -992,6 +1018,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          else {
             throw new IllegalArgumentException("Invalid boolean setting ID");
          } 
+      }
+
+      public void setStringSettingNonPersistent(int id, String value) {
+           if (id >= 0 && id < stringSettingsKeys.length) {
+               stringSettingsValues[id] = value;
+           }
+           else {
+               throw new IllegalArgumentException("Invalid string setting ID");
+           }
       }
     
    	

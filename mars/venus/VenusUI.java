@@ -617,9 +617,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          settingsMemoryConfiguration = new JMenuItem(settingsMemoryConfigurationAction);
          settingsLoadAdditionalInstruction = new JMenuItem(settingsLoadAdditionalInstructionAction);
          settingsOutputLogLevel1 = new JCheckBoxMenuItem();
-         settingsOutputLogLevel1.setSelected(Globals.displayLevel == 1);
+         settingsOutputLogLevel1.setSelected(Globals.getSettings().getOutputLoggingLevel() == 1);
          settingsOutputLogLevel2 = new JCheckBoxMenuItem();
-         settingsOutputLogLevel2.setSelected(Globals.displayLevel == 2);
+         settingsOutputLogLevel2.setSelected(Globals.getSettings().getOutputLoggingLevel() == 2);
          settingsOutputLogLevel1.setAction(new SettingsOutputLogLevelAction(
             "Output Log Level 1", null, "Set Output Log to Level 1",
             null, null, mainUI, settingsOutputLogLevel2, 1
@@ -629,6 +629,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             null, null, mainUI, settingsOutputLogLevel1, 2
          ));
          settingsIgnoreArithmeticOverflow = new JCheckBoxMenuItem(settingsIgnoreArithmeticOverflowAction);
+         settingsIgnoreArithmeticOverflow.setSelected(Globals.getSettings().getIgnoreArithmeticOverflow());
 
          settings.add(settingsLabel);
          settings.add(settingsProgramArguments);

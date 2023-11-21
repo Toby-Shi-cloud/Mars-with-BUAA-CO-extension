@@ -17,6 +17,7 @@ public class SettingsIgnoreArithmeticOverflowAction extends GuiAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        Globals.ignoreArithmeticOverflow = ((JCheckBoxMenuItem) e.getSource()).isSelected();
+//        Globals.ignoreArithmeticOverflow = ((JCheckBoxMenuItem) e.getSource()).isSelected();
+        Globals.getSettings().setIgnoreArithmeticOverflow(((JCheckBoxMenuItem) e.getSource()).isSelected());
     }
 }

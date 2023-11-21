@@ -346,7 +346,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      Globals.displayRFchanging = null;
                      Globals.displayDMchanging = null;
                      instruction.getSimulationCode().simulate(statement);
-                     if (Globals.displayLevel == 2) { // added 1-Nov-2022, by Toby to support BUAA CO.
+                     if (Globals.getSettings().getOutputLoggingLevel() == 2) { // added 1-Nov-2022, by Toby to support BUAA CO.
                         SystemIO.printLog(String.format("@PC%08x -> %s (%08x)\n",
                            pc,
                            statement.getBasicAssemblyStatement(),
@@ -358,7 +358,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         if (Globals.displayDMchanging != null) {
                            SystemIO.printLog("\t\t" + Globals.displayDMchanging + '\n');
                         }
-                     } else if (Globals.displayLevel == 1) {
+                     } else if (Globals.getSettings().getOutputLoggingLevel() == 1) {
                         if (Globals.displayRFchanging != null) {
                            SystemIO.printLog(String.format("@%08x: %s\n",
                               pc,
