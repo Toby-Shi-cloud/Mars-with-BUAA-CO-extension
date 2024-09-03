@@ -79,6 +79,50 @@ public class CycleCounter {
         }
     }
 
+    public static InstructionType getType(ProgramStatement statement) {
+        int opcode = statement.getBinaryStatement() >>> 26;
+        int func = statement.getBinaryStatement() & 0x1F;
+
+        if (opcode == 0x00) {
+            if (func == 0b001000 || func == 0b001001) {
+                // jr, jalr
+                return InstructionType.GOTO;
+            } else if (func == 0b011000 || func == 0b011001) {
+                // mult, multu
+                return InstructionType.MUL;
+            } else if (func == 0b011010 || func == 0b011011) {
+                // div, divu
+                return InstructionType.DIV;
+            } else {
+                return InstructionType.OTHER;
+            }
+        } else if (opcode == 0x01) {
+            if (func <= 0x07 || (0x10 <= func && func <= 0x13)) {
+                // bltz, bgez, bltzl, bgezl, bltzal, bgezal, bltzall, bgczall
+                return InstructionType.GOTO;
+            } else {
+                return InstructionType.OTHER;
+            }
+        } else if (opcode == 0b000010 || opcode == 0b000011) {
+            // j, jal
+            return InstructionType.GOTO;
+        } else if (opcode <= 0x07) {
+            // beq, bne, blez, bgtz
+            return InstructionType.GOTO;
+        } else if (0x14 <= opcode && opcode <= 0x17) {
+            // beql, bnel, blezl, bgtzl
+            return InstructionType.GOTO;
+        } else if (0x20 <= opcode && opcode <= 0x26) {
+            // lb, lh, lwl, lw, lbu, lhu, lwr
+            return InstructionType.MEM;
+        } else if (0x28 <= opcode && opcode <= 0x2E) {
+            // sb, sh, swl, sw, swr
+            return InstructionType.MEM;
+        } else {
+            return InstructionType.OTHER;
+        }
+    }
+
     /**
      * Count the cycles of the instruction. If the "cc" setting is false, the cycles will not be counted.
      * @param statement The ProgramStatement to be counted.
@@ -88,47 +132,8 @@ public class CycleCounter {
             return;
         }
 
-        int opcode = statement.getBinaryStatement() >>> 26;
-        int func = statement.getBinaryStatement() & 0x1F;
+        updateCycle(getType(statement));
 
-        if (opcode == 0x00) {
-            if (func == 0b001000 || func == 0b001001) {
-                // jr, jalr
-                updateCycle(InstructionType.GOTO);
-            } else if (func == 0b011000 || func == 0b011001) {
-                // mult, multu
-                updateCycle(InstructionType.MUL);
-            } else if (func == 0b011010 || func == 0b011011) {
-                // div, divu
-                updateCycle(InstructionType.DIV);
-            } else {
-                updateCycle(InstructionType.OTHER);
-            }
-        } else if (opcode == 0x01) {
-            if (func <= 0x07 || (0x10 <= func && func <= 0x13)) {
-                // bltz, bgez, bltzl, bgezl, bltzal, bgezal, bltzall, bgczall
-                updateCycle(InstructionType.GOTO);
-            } else {
-                updateCycle(InstructionType.OTHER);
-            }
-        } else if (opcode == 0b000010 || opcode == 0b000011) {
-            // j, jal
-            updateCycle(InstructionType.GOTO);
-        } else if (opcode <= 0x07) {
-            // beq, bne, blez, bgtz
-            updateCycle(InstructionType.GOTO);
-        } else if (0x14 <= opcode && opcode <= 0x17) {
-            // beql, bnel, blezl, bgtzl
-            updateCycle(InstructionType.GOTO);
-        } else if (0x20 <= opcode && opcode <= 0x26) {
-            // lb, lh, lwl, lw, lbu, lhu, lwr
-            updateCycle(InstructionType.MEM);
-        } else if (0x28 <= opcode && opcode <= 0x2E) {
-            // sb, sh, swl, sw, swr
-            updateCycle(InstructionType.MEM);
-        } else {
-            updateCycle(InstructionType.OTHER);
-        }
     }
 
     public String emitResult() {
