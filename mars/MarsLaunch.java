@@ -102,6 +102,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
            cl  -- load an additional instruction from a .class file.<br>
                   Note that your .class file must be in the same directory as mars.jar.<br>
            ig  -- ignore arithmetic overflow.<br>
+           cc  -- count the cycles of the simulator.<br>
+ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.<br>
     **/
     
    
@@ -117,6 +119,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       private boolean countInstructions; // Whether to count and report number of instructions executed 
       private boolean selfModifyingCode; // Whether to allow self-modifying code (e.g. write to text segment)
       private boolean ignoreArithmeticOverflow;  // Whether to ignore the arithmetic overflow
+      private boolean countCycles;  // Whether to count the cycles of the simulator
       private int outputLoggingLevel;  // The output logging level: 0, 1 or 2
       private static final String rangeSeparator = "-";
       private static final int splashDuration = 2000; // time in MS to show splash screen
@@ -154,6 +157,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             warningsAreErrors = false;
             startAtMain = false;
             ignoreArithmeticOverflow = false;
+            countCycles = false;
             outputLoggingLevel = 0;
             countInstructions = false;
 				selfModifyingCode = false;
@@ -452,6 +456,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                ignoreArithmeticOverflow = true;
                continue;
             }
+
+            if (args[i].equalsIgnoreCase("cc")) { // added 3-Sep-2024, by swkfk to count the cycles of the simulator.
+               countCycles = true;
+               continue;
+            }
+
+            if (args[i].equalsIgnoreCase("ccw")) { // added 3-Sep-2024, by swkfk to set the weight of the cycles.
+               Globals.getSettings().setCyclesWeight(args[++i]);
+               continue;
+            }
          
          
             if (args[i].indexOf("$") == 0) {
@@ -517,6 +531,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             Globals.getSettings().setBooleanSettingNonPersistent(Settings.DELAYED_BRANCHING_ENABLED, delayedBranching);
             Globals.getSettings().setBooleanSettingNonPersistent(Settings.SELF_MODIFYING_CODE_ENABLED, selfModifyingCode);
             Globals.getSettings().setBooleanSettingNonPersistent(Settings.IGNORE_ARITHMETIC_OVERFLOW, ignoreArithmeticOverflow);
+            Globals.getSettings().setBooleanSettingNonPersistent(Settings.COUNT_CYCLES, countCycles);
             Globals.getSettings().setStringSettingNonPersistent(Settings.OUTPUT_LOGGING_LEVEL, "" + outputLoggingLevel);
             File mainFile = new File((String) filenameList.get(0)).getAbsoluteFile();// First file is "main" file
             ArrayList filesToAssemble;

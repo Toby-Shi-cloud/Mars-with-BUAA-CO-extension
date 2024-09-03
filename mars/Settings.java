@@ -113,6 +113,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       public static final int SELF_MODIFYING_CODE_ENABLED = 20;
        /**  Flag to ignore the arithmetic overflow */
       public static final int IGNORE_ARITHMETIC_OVERFLOW = 21;
+      /**  Flag to count the cycles of different instructions */
+      public static final int COUNT_CYCLES = 22;
    
       // NOTE: key sequence must match up with labels above which are used for array indexes!
       private static String[] booleanSettingsKeys = {"ExtendedAssembler", "BareMachine", "AssembleOnOpen", "AssembleAll",
@@ -121,7 +123,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          												"WarningsAreErrors", "ProgramArguments", "DataSegmentHighlighting",
          												"RegistersHighlighting", "StartAtMain", "EditorCurrentLineHighlighting",
          												"PopupInstructionGuidance", "PopupSyscallInput", "GenericTextEditor", 
-         												"AutoIndent", "SelfModifyingCode", "IgnoreArithmeticOverflow" };
+         												"AutoIndent", "SelfModifyingCode", "IgnoreArithmeticOverflow", "CountCycles" };
    
       /** Last resort default values for boolean settings; will use only  if neither
    	 *  the Preferences nor the properties file work. If you wish to change them, 
@@ -130,7 +132,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    	 */
       public static boolean[] defaultBooleanSettingsValues = { // match the above list by position
                                               true, false, false, false, false, true, true, false, false, 
-         												 true, false, false, true, true, false, true, true, false, false, true, false, false };
+         												 true, false, false, true, true, false, true, true, false, false, true, false, false, false };
    
       // STRING SETTINGS.  Each array position has associated name.
    	/** Current specified exception handler file (a MIPS assembly source file) */
@@ -148,15 +150,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    	/** Number of letters to be matched by editor's instruction guide before popup generated (if popup enabled) */
       public static final int EDITOR_POPUP_PREFIX_LENGTH = 6;
       public static final int OUTPUT_LOGGING_LEVEL = 7;
+      public static final int CyclesWeight = 8;
    	// Match the above by position.
-      private static final String[] stringSettingsKeys = { "ExceptionHandler", "TextColumnOrder", "LabelSortState", "MemoryConfiguration", "CaretBlinkRate", "EditorTabSize", "EditorPopupPrefixLength", "OutputLoggingLevel" };
+      private static final String[] stringSettingsKeys = { "ExceptionHandler", "TextColumnOrder", "LabelSortState", "MemoryConfiguration", "CaretBlinkRate", "EditorTabSize", "EditorPopupPrefixLength", "OutputLoggingLevel", "CyclesWeight" };
    
       /** Last resort default values for String settings; 
    	 *  will use only if neither the Preferences nor the properties file work.
    	 *  If you wish to change, do so before instantiating the Settings object.
    	 *  Must match key by list position.
    	 */
-      private static String[] defaultStringSettingsValues = { "", "0 1 2 3 4", "0", "", "500", "8", "2", "0" };
+      private static String[] defaultStringSettingsValues = { "", "0 1 2 3 4", "0", "", "500", "8", "2", "0", "25:4:2:3:1" };
    
       // FONT SETTINGS.  Each array position has associated name.
    	/** Font for the text editor */
@@ -350,6 +353,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       public void setIgnoreArithmeticOverflow(boolean value) {
           internalSetBooleanSetting(IGNORE_ARITHMETIC_OVERFLOW, value);
       }
+
+       public String getCyclesWeight() {
+           return stringSettingsValues[CyclesWeight];
+       }
+
+       public void setCyclesWeight(String value) {
+           stringSettingsValues[CyclesWeight] = value;
+       }
+
+       public boolean getCountCycles() {
+           return booleanSettingsValues[COUNT_CYCLES];
+       }
 
       public int getOutputLoggingLevel() {
           if (Objects.equals(stringSettingsValues[OUTPUT_LOGGING_LEVEL], "1")) {

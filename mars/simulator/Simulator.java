@@ -207,7 +207,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          private volatile AbstractAction stopper;
          private AbstractAction starter;
          private int constructReturnReason;
-      
+
+         private final CycleCounter cycleCounter = new CycleCounter();
       
          /**
       	 *  SimThread constructor.  Receives all the information it needs to simulate execution.
@@ -321,7 +322,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          	// *********************************************************************
          	
             int pc = 0;  // added: 7/26/06 (explanation above)
-         
+
             while (statement != null) {
                pc = RegisterFile.getProgramCounter(); // added: 7/26/06 (explanation above)
                RegisterFile.incrementPC();           	
@@ -346,6 +347,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      Globals.displayRFchanging = null;
                      Globals.displayDMchanging = null;
                      instruction.getSimulationCode().simulate(statement);
+                     cycleCounter.update(statement);  // added 3-Sept-2024, by swkfk to count cycles
                      if (Globals.getSettings().getOutputLoggingLevel() == 2) { // added 1-Nov-2022, by Toby to support BUAA CO.
                         SystemIO.printLog(String.format("@PC%08x -> %s (%08x)\n",
                            pc,
@@ -516,6 +518,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       	 */
       	 
           public void finished() {
+            // I want to display the cycle counts here
+          if (Globals.getSettings().getCountCycles()) {
+            Globals.displayOutput.println(cycleCounter.emitResult());
+          }
            // If running from the command-line, then there is no GUI to update.
             if (Globals.getGui() == null) {
                return;
