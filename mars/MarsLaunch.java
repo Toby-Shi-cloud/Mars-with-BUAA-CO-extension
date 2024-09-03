@@ -912,6 +912,8 @@ ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.
          out.println("      cl <class> -- load an additional instruction from a .class file.");
          out.println("             Note that your .class file must be in the same directory as mars.jar.");
          out.println("      ig  -- ignore arithmetic overflow.");
+         out.println("      cc  -- count the cycles of the simulator.<br>");
+         out.println("     ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.<br>");
       }
    
    }
