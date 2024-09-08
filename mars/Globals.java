@@ -96,7 +96,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       /** Where the options follows will display - added 1-Nov-2022, by Toby to support BUAA CO */
       public static PrintStream displayOutput = System.out;
       /** Current Version of this adapted version */
-      public static final String extensionVersion = "0.4";
+      public static final String extensionVersion = "0.5";
       /** Use by RF to store the changing log string */
       public static String displayRFchanging = null;
       /** Use by DM to store the changing log string */
