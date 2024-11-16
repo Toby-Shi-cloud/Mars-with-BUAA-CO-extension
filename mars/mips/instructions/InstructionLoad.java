@@ -12,12 +12,13 @@ package mars.mips.instructions;
  * your instruction support jump, branch, or link.
  * 
  * @author Toby Shi
- * @version November 2022
+ * @author MessiXiang
+ * @version November 2024
  * @see BranchOperation
  * @see SimulationCode
  * @see InstructionSet
  */
-public interface AdditionalInstruction extends SimulationCode {
+public interface InstructionLoad extends SimulationCode {
 
     /**
      * An example usage of the instruction, as a String.
@@ -25,7 +26,7 @@ public interface AdditionalInstruction extends SimulationCode {
      * 
      * @return the example string of the instruction
      */
-    public String getExample();
+    public String getTemplate();
 
     /**
      * Return a brief description of the additional instruction
@@ -36,13 +37,11 @@ public interface AdditionalInstruction extends SimulationCode {
     public String getDescription();
 
     /**
-     * The instruction format must be R_FORMAT, I_FORMAT,
-     * J_FORMAT, or I_BRANCH_FORMAT
+     * The instruction format must be "R"/"I"/"J"/"B"
      * 
-     * @return the MIPS-defined formats of the instruction
-     * @see BasicInstructionFormat
+     * @return the MIPS-defined formats of the instruction in String
      */
-    public BasicInstructionFormat getInstructionFormat();
+    public String getFormatStr();
 
     /**
      * The opcode mask is a 32 character string that contains the
@@ -51,5 +50,5 @@ public interface AdditionalInstruction extends SimulationCode {
      * 
      * @return the operation mask of the instruction
      */
-    public String getOperationMask();
+    public String getEncoding();
 }
