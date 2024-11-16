@@ -322,9 +322,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          	// *********************************************************************
          	
             int pc = 0;  // added: 7/26/06 (explanation above)
-            int lastPC;  // added: 11/16/24 fix a branch bug
+            
             while (statement != null) {
-               lastPC = pc;  // added: 11/16/24 fix a branch bug
                pc = RegisterFile.getProgramCounter(); // added: 7/26/06 (explanation above)
                RegisterFile.incrementPC();           	
             	// Perform the MIPS instruction in synchronized block.  If external threads agree
@@ -349,7 +348,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      Globals.displayDMchanging = null;
                      instruction.getSimulationCode().simulate(statement);
                      cycleCounter.update(statement);  // added 3-Sept-2024, by swkfk to count cycles
-                     if (Globals.getSettings().getOutputLoggingLevel() == 2 && pc != lastPC) { // added 1-Nov-2022, by Toby to support BUAA CO.
+                     if (Globals.getSettings().getOutputLoggingLevel() == 2) { // added 1-Nov-2022, by Toby to support BUAA CO.
                         SystemIO.printLog(String.format("@PC%08x -> %s (%08x)\n",
                            pc,
                            statement.getBasicAssemblyStatement(),
@@ -361,7 +360,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         if (Globals.displayDMchanging != null) {
                            SystemIO.printLog("\t\t" + Globals.displayDMchanging + '\n');
                         }
-                     } else if (Globals.getSettings().getOutputLoggingLevel() == 1 && pc != lastPC) {
+                     } else if (Globals.getSettings().getOutputLoggingLevel() == 1) {
                         if (Globals.displayRFchanging != null) {
                            SystemIO.printLog(String.format("@%08x: %s\n",
                               pc,
