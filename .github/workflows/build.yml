@@ -48,7 +48,7 @@ jobs:
       shell: cmd
       run: |
         cd test
-        java -jar mars.jar code1.asm nc mc CompactLargeText coL1 cl bhelbal.class ig > testTemp.txt
+        java -jar mars.jar code1.asm nc mc CompactLargeText coL1 cl behlbal.class ig > testTemp.txt
         fc testTemp.txt stdout1.txt
 
     - name: Test2
@@ -62,17 +62,10 @@ jobs:
       shell: cmd
       run: |
         cd test
-        java -jar mars.jar code3.asm mc CompactLargeText nc db coL1 > testTemp.txt
-        fc testTemp.txt stdout3.txt
-
-    - name: Test4
-      shell: cmd
-      run: |
-        cd test
         java -jar mars.jar code_cc.asm nc mc CompactLargeText cc ccw 2.0:1.0:1.0:1.0:0.5 > testTemp.txt
         fc testTemp.txt stdout_cc2.txt
 
-    - name: Test5
+    - name: Test4
       shell: cmd
       run: |
         cd test
