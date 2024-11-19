@@ -322,7 +322,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          	// *********************************************************************
          	
             int pc = 0;  // added: 7/26/06 (explanation above)
-
+            
             while (statement != null) {
                pc = RegisterFile.getProgramCounter(); // added: 7/26/06 (explanation above)
                RegisterFile.incrementPC();           	

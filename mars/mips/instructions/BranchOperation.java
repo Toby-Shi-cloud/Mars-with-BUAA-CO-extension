@@ -49,7 +49,7 @@ public abstract class BranchOperation {
      *          method near the bottom (currently line 194, heavily commented).
      * 
      * @see InstructionSet
-     * @see AdditionalInstruction
+     * @see InstructionLoad
      */
     protected void processBranch(int displacement) {
         if (Globals.getSettings().getBooleanSetting(Settings.DELAYED_BRANCHING_ENABLED)) {
@@ -76,7 +76,7 @@ public abstract class BranchOperation {
      * @author Pete Sanderson and Ken Vollmar
      * 
      * @see InstructionSet
-     * @see AdditionalInstruction
+     * @see InstructionLoad
      */
     protected void processJump(int targetAddress) {
         if (Globals.getSettings().getBooleanSetting(Settings.DELAYED_BRANCHING_ENABLED)) {
@@ -100,7 +100,7 @@ public abstract class BranchOperation {
      * @author Pete Sanderson and Ken Vollmar
      * 
      * @see InstructionSet
-     * @see AdditionalInstruction
+     * @see InstructionLoad
      */
     protected void processReturnAddress(int register) {
         RegisterFile.updateRegister(register, RegisterFile.getProgramCounter() +

@@ -7,7 +7,7 @@
 import mars.ProcessingException;
 import mars.ProgramStatement;
 import mars.mips.hardware.RegisterFile;
-import mars.mips.instructions.AdditionalInstruction;
+import mars.mips.instructions.InstructionLoad;
 import mars.mips.instructions.BasicInstructionFormat;
 import mars.mips.instructions.BranchOperation;
 
@@ -15,7 +15,7 @@ import mars.mips.instructions.BranchOperation;
  * An example of AdditionalInstruction.
  * 
  */
-public class bhelbal extends BranchOperation implements AdditionalInstruction {
+public class bhelbal extends BranchOperation implements InstructionLoad {
 
     private int bitAdder(int value) {
         int count = 0;
@@ -37,7 +37,7 @@ public class bhelbal extends BranchOperation implements AdditionalInstruction {
     }
 
     @Override
-    public String getExample() {
+    public String getTemplate() {
         return "bhelbal $t0,$t1,label";
     }
 
@@ -48,12 +48,12 @@ public class bhelbal extends BranchOperation implements AdditionalInstruction {
     }
 
     @Override
-    public BasicInstructionFormat getInstructionFormat() {
-        return BasicInstructionFormat.I_BRANCH_FORMAT;
+    public String getFormatStr() {
+        return "I";
     }
 
     @Override
-    public String getOperationMask() {
+    public String getEncoding() {
         return "111110 fffff sssss tttttttttttttttt";
     }
 }

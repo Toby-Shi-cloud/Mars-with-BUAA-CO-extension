@@ -6,8 +6,10 @@ package mars.mips.instructions;
  */
 
 import java.io.File;
+import java.io.InvalidClassException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Objects;
 
 import mars.Globals;
 
@@ -19,7 +21,7 @@ import mars.Globals;
  * @version November 2022
  * @see InstructionSet
  * @see BasicInstruction
- * @see AdditionalInstruction
+ * @see InstructionLoad
  */
 @SuppressWarnings("unchecked")
 public class LoadInstruction {
@@ -37,19 +39,37 @@ public class LoadInstruction {
             URL url = classFile.toURI().toURL();
             URLClassLoader urlClassLoader = new URLClassLoader(new URL[] { url });
             Class<?> clazz = urlClassLoader.loadClass(className);
-            AdditionalInstruction newInstance = (AdditionalInstruction) clazz.getDeclaredConstructor().newInstance();
-            BasicInstruction instr = new BasicInstruction(
-                    newInstance.getExample(),
-                    newInstance.getDescription(),
-                    newInstance.getInstructionFormat(),
-                    newInstance.getOperationMask(),
-                    (SimulationCode) newInstance);
-            instr.createExampleTokenList();
+            InstructionLoad newInstance = (InstructionLoad) clazz.getDeclaredConstructor().newInstance();
+            BasicInstruction instr = getBasicInstruction(newInstance);
             Globals.instructionSet.getInstructionList().add(instr);
             Globals.instructionSet.initialize(); // reinitialize because a new basic instruction is added.
             urlClassLoader.close();
         } catch (Exception e) {
             throw new ClassNotFoundException("Load " + filename + " failed!");
         }
+    }
+    
+    private static BasicInstruction getBasicInstruction(InstructionLoad newInstance) throws InvalidClassException {
+        BasicInstructionFormat basicInstructionFormat;
+
+        if (Objects.equals(newInstance.getFormatStr(), "R"))
+            basicInstructionFormat = BasicInstructionFormat.R_FORMAT;
+        else if (Objects.equals(newInstance.getFormatStr(), "B"))
+            basicInstructionFormat = BasicInstructionFormat.I_BRANCH_FORMAT;
+        else if (Objects.equals(newInstance.getFormatStr(), "J"))
+            basicInstructionFormat = BasicInstructionFormat.J_FORMAT;
+        else if (Objects.equals(newInstance.getFormatStr(), "I"))
+            basicInstructionFormat = BasicInstructionFormat.I_FORMAT;
+        else
+            throw new InvalidClassException("Invalid format string: " + newInstance.getFormatStr());
+
+        BasicInstruction instr = new BasicInstruction(
+                newInstance.getTemplate(),
+                newInstance.getDescription(),
+                basicInstructionFormat,
+                newInstance.getEncoding(),
+                (SimulationCode) newInstance);
+        instr.createExampleTokenList();
+        return instr;
     }
 }
