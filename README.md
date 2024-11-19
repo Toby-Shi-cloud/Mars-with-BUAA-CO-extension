@@ -24,17 +24,18 @@
 2. `coL1`：打印寄存器修改和内存修改信息，与 `P4` 要求相同
 3. `coL2`：打印额外信息，方便逐步查错和调试
 4. `mc CompactLargeText`: 在原版 `mc CompactDataAtZero` 的基础上支持多达 $4096$ 条 $32$ 位机器码（此设置可在 `GUI` 界面使用）
-5. `ig`：忽略全部算术溢出
-6. `cl <class>`：加载 `.class` 文件以支持额外的指令。
-> 请务必把 `.class` 文件和 `Mars.jar` 放在相同目录下。
-> 若已获取源代码，请把 `.class` 文件和 `Mars.java` 放在相同目录下。
-> 
-> 若要创建受支持的 `.class` 文件，你的 `class` 必须实现 `mars.mips.instructions.InstructionLoad` 接口。详细示例请见源码中的 `bhelbal.java`。
->
-> [详细教程](#自定义额外指令教程)。
+5. `mc FixedCompactLargeText`: 针对`P4-P6`使用过超大测试数据但是数据可能并不合法的情况，可以使用这条配置以进行错误处理，这条配置将exception handler放置于userdata之外，以便单独编写代码。
+6. `ig`：忽略全部算术溢出
+7. `cl <class>`：加载 `.class` 文件以支持额外的指令。
+   > 请务必把 `.class` 文件和 `Mars.jar` 放在相同目录下。
+   > 若已获取源代码，请把 `.class` 文件和 `Mars.java` 放在相同目录下。
+   > 
+   > 若要创建受支持的 `.class` 文件，你的 `class` 必须实现 `mars.mips.instructions.InstructionLoad` 接口。详细示例请见源码中的 `bhelbal.java`。
+   >
+   > [详细教程](#自定义额外指令教程)。
 
-7. `cc`：启用周期计数，会在程序运行结束时打印输出。
-8. `ccw 25:4:2:3:1`：设置不同种类指令的周期数，使用 `:` 分隔，分别为除法指令、乘法指令、跳转指令、访存指令、其他指令。支持浮点数，默认值为 `25:4:2:3:1`。
+8. `cc`：启用周期计数，会在程序运行结束时打印输出。
+9. `ccw 25:4:2:3:1`：设置不同种类指令的周期数，使用 `:` 分隔，分别为除法指令、乘法指令、跳转指令、访存指令、其他指令。支持浮点数，默认值为 `25:4:2:3:1`。
 
 增加一个**拓展工具** `Cycles Counter`，可以实时统计不同种类指令的执行次数，并计算周期数与 CPI。位于菜单 `Tools -> Cycles Counter`。
 
@@ -48,7 +49,7 @@
 前往 [release](https://GitHub.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/releases/) 下载 `Mars_CO.jar` 和 `Mars_CO_example.zip`，然后在命令行运行：
 
 ```sh
-java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl bhelbal.class ig
+java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
 ```
 
 ## 注意事项
@@ -62,11 +63,11 @@ java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl bhelbal.class ig
 ### 准备工作
 
 1. 如要进行指令扩展，建议下载本仓库源码（也可以只下载 jar，若只下载 jar，需要在编译时添加本 jar 作为依赖）
-2. 在根目录（与 Mars.java 同级或与 Mars.jar 同级）下创建一个新 java 类，类名应该为指令的名字。例如，若要创建指令 `bhelbal`，则类名应该为 `bhelbal`，文件名为 `bhelbal.java`。
+2. 在根目录（与 Mars.java 同级或与 Mars.jar 同级）下创建一个新 java 类，类名应该为指令的名字。例如，若要创建指令 `behlbal`，则类名应该为 `behlbal`，文件名为 `behlbal.java`。
 
 ### 编写代码
 
-1. 你的类必须实现接口 `AdditionalInstruction`，如果你的类是跳转指令，还需要继承 `BranchOperation`。
+1. 你的类必须实现接口 `AdditionalInstruction`，如果你的类是跳转指令，还需要实现`BranchOperation`里面的方法（无需继承）。
 2. `AdditionalInstruction` 要求你实现 5 个方法: `simulate`, `getTemplate`, `getDescription`, `getFormatStr`, `getEncoding`。
    1. `void simulate(ProgramStatement statement) throws ProcessingException` 方法是指令的具体实现，你需要在这里实现指令的功能。
     > 参数 `statement` 包含了本条指令的信息，一般情况下，你只需要使用到 `int[] getOperands()` 和 `int getOperand(int)` 方法，即获取所有操作数，和获取某个操作数（获取到的是寄存器编号，使用 `RegisterFile.getValue(int)` 方法可以获取寄存器的值）。  
@@ -92,7 +93,7 @@ java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl bhelbal.class ig
 ### 准备工作
 1. 下载课程组提供的`.class`文件，并放于某个不相干的文件夹中备用。
 
-> 加载class部分的代码由fernflower工具协助完成。
+> 加载、解析class部分的代码由fernflower工具协助完成。
 > 
 > fernflower工具的作者于2024年10月20日与世长辞，请允许我在此献上崇高的敬意。
 
