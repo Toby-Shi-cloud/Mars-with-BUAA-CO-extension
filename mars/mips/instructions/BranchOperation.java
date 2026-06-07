@@ -61,6 +61,10 @@ public abstract class BranchOperation {
                     RegisterFile.getProgramCounter()
                             + (displacement << 2)); // - Instruction.INSTRUCTION_LENGTH);
         }
+        // P7: mark branch instruction executed for delay slot tracking
+        if (Globals.getSettings().getExceptionForCourse()) {
+            DelayedBranch.setTryjbranch();
+        }
     }
 
     /**
@@ -83,6 +87,10 @@ public abstract class BranchOperation {
             DelayedBranch.register(targetAddress);
         } else {
             RegisterFile.setProgramCounter(targetAddress);
+        }
+        // P7: mark jump instruction executed for delay slot tracking
+        if (Globals.getSettings().getExceptionForCourse()) {
+            DelayedBranch.setTryjbranch();
         }
     }
 

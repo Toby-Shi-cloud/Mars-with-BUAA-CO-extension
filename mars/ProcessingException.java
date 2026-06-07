@@ -39,8 +39,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @version August 2003
  **/
 
-    public class ProcessingException extends Exception {  
+    public class ProcessingException extends Exception {
       private ErrorList errs;
+      private boolean epcNotAligned;
    
    /**
     * Constructor for ProcessingException.
@@ -50,6 +51,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     **/
        public ProcessingException(ErrorList e) {
          errs = e;
+         epcNotAligned = false;
       }
    	
    /**
@@ -62,6 +64,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
        public ProcessingException(ErrorList e, AddressErrorException aee) {
          errs = e;
          Exceptions.setRegisters(aee.getType(), aee.getAddress());
+         epcNotAligned = false;
       }
    
    /**
@@ -73,13 +76,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
        public ProcessingException(ProgramStatement ps, String m) {
          errs = new ErrorList();
          errs.add(new ErrorMessage(ps, "Runtime exception at "+
-            Binary.intToHexString(RegisterFile.getProgramCounter()-Instruction.INSTRUCTION_LENGTH)+ 
+            Binary.intToHexString(RegisterFile.getProgramCounter()-Instruction.INSTRUCTION_LENGTH)+
             ": "+m));
       		// Stopped using ps.getAddress() because of pseudo-instructions.  All instructions in
       		// the macro expansion point to the same ProgramStatement, and thus all will return the
-      		// same value for getAddress(). But only the first such expanded instruction will 
+      		// same value for getAddress(). But only the first such expanded instruction will
       		// be stored at that address.  So now I use the program counter (which has already
       		// been incremented).
+         epcNotAligned = false;
       }
    
    
@@ -93,6 +97,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
        public ProcessingException(ProgramStatement ps, String m, int cause) {
          this(ps,m);
          Exceptions.setRegisters(cause);
+         epcNotAligned = false;
       }
    
    
@@ -106,6 +111,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
        public ProcessingException(ProgramStatement ps, AddressErrorException aee) {
          this(ps, aee.getMessage());
          Exceptions.setRegisters(aee.getType(), aee.getAddress());
+         epcNotAligned = false;
       }
    
    /**
@@ -116,7 +122,31 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     **/
        public ProcessingException() {
          errs = null;
+         epcNotAligned = false;
       }
+
+   /**
+    * Constructor for P7 interrupt/exception handling.
+    * Sets exception registers only, no ErrorList.
+    * @param cause exception cause code
+    **/
+       public ProcessingException(int cause) {
+         Exceptions.setRegisters(cause);
+         epcNotAligned = false;
+       }
+
+   /**
+    * Constructor for P7 with epcNotAligned flag.
+    * @param ps a ProgramStatement of statement causing runtime exception
+    * @param m a String containing specialized error message
+    * @param cause exception cause code
+    * @param epcNotAligned true if EPC is not word-aligned
+    **/
+       public ProcessingException(ProgramStatement ps, String m, int cause, boolean ena) {
+         this(ps, m);
+         Exceptions.setRegisters(cause);
+         epcNotAligned = ena;
+       }
    
    /**
     * Produce the list of error messages.
@@ -129,5 +159,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
        public ErrorList errors() {
          return errs;
       }
-   
+
+   /**
+    * Returns whether the EPC is not word-aligned (fetch exception).
+    * @return true if EPC is not aligned
+    **/
+       public boolean isEpcNotAligned() {
+         return epcNotAligned;
+       }
+
    }

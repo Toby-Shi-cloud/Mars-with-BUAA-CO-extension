@@ -121,6 +121,17 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          notifyAnyObservers(AccessNotice.WRITE);
          return old;
       }
+
+   	/**
+   	  *  Sets the value of the register without notifying observers.
+   	  *   @param val The desired value for the register.
+   	  *   @return previous value of register
+   	  */
+       public synchronized int setValueNoNotify(int val){
+         int old = value;
+         value = val;
+         return old;
+      }
    	
    	/**
    	  *  Resets the value of the register to the value it was constructed with.

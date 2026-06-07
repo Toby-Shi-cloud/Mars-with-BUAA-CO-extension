@@ -204,12 +204,42 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       
       /**
    	 *  Each individual register is a separate object and Observable.  This handy method
-   	 *  will delete the given Observer from each one.  
+   	 *  will delete the given Observer from each one.
    	 */
        public static void deleteRegistersObserver(Observer observer) {
          for (int i=0; i<registers.length; i++) {
             registers[i].deleteObserver(observer);
          }
       }
+
+      /**
+       *  Update Cause register IP bits [15:10] from Globals.HWInt.
+       *  Used by P7 interrupt handling.
+       */
+       public static void updateCause() {
+         int causeIdx = -1;
+         for (int i = 0; i < registers.length; i++) {
+            if (registers[i].getNumber() == CAUSE) { causeIdx = i; break; }
+         }
+         if (causeIdx >= 0) {
+            registers[causeIdx].setValueNoNotify(
+               (registers[causeIdx].getValue() & 0xFFFF03FF) | (mars.Globals.HWInt << 10)
+            );
+         }
+       }
+
+      /**
+       *  Check if an interrupt should be taken.
+       *  Conditions: (Cause & Status & IP_mask) != 0, EXL == 0, IE == 1.
+       *  @return true if interrupt should be responded to.
+       */
+       public static boolean isIter() {
+         int status = getValue(STATUS);
+         int cause = getValue(CAUSE);
+         boolean hasInt = ((cause & status & 0xFC00) != 0);
+         boolean notEXL = ((status & 2) == 0);
+         boolean IE = ((status & 1) != 0);
+         return hasInt && notEXL && IE;
+       }
 
    }

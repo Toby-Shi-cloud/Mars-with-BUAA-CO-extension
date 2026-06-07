@@ -102,6 +102,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
            cl  -- load an additional instruction from a .class file.<br>
                   Note that your .class file must be in the same directory as mars.jar.<br>
            ig  -- ignore arithmetic overflow.<br>
+         efc  -- enable P7 exception/interrupt handling for BUAA CO.<br>
            cc  -- count the cycles of the simulator.<br>
 ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.<br>
     **/
@@ -454,6 +455,10 @@ ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.
             }
             if (args[i].equalsIgnoreCase("ig")) { // added 5-Nov-2022, by Toby to ignore arithmetic overflow.
                ignoreArithmeticOverflow = true;
+               continue;
+            }
+            if (args[i].equalsIgnoreCase("efc")) { // P7 exception/interrupt handling for BUAA CO.
+               Globals.getSettings().setExceptionForCourse(true);
                continue;
             }
 
@@ -912,6 +917,7 @@ ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.
          out.println("      cl <class> -- load an additional instruction from a .class file.");
          out.println("             Note that your .class file must be in the same directory as mars.jar.");
          out.println("      ig  -- ignore arithmetic overflow.");
+         out.println("     efc  -- enable P7 exception/interrupt handling for BUAA CO.");
          out.println("      cc  -- count the cycles of the simulator.<br>");
          out.println("     ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.<br>");
       }

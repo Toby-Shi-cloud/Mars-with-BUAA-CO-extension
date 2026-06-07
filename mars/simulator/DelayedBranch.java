@@ -64,10 +64,13 @@ public class DelayedBranch {
    private static final int CLEARED    = 0;
 	private static final int REGISTERED = 1;
 	private static final int TRIGGERED  = 2;
+	private static final int TRYJBRANCH = 3; // P7: branch/jump instruction executed
+	private static final int TRYDELAY   = 4; // P7: in delay slot after branch
 
    // Initially nothing is happening.
-	
+
 	private static int state = CLEARED;
+	private static int tryState = CLEARED;
 	private static int branchTargetAddress = 0;
 	
 	/**
@@ -155,5 +158,44 @@ public class DelayedBranch {
 	 static int getBranchTargetAddress() {
 	    return branchTargetAddress;
 	}
-	
+
+   // P7 try-state methods for tracking branch delay slot exceptions
+
+   /**
+    * Mark that a branch/jump instruction has been executed.
+    * Called from branch/jump instruction simulate() methods.
+    */
+	public static void setTryjbranch() {
+	   tryState = TRYJBRANCH;
+	}
+
+   /**
+    * Transition from TRYJBRANCH to TRYDELAY state.
+    * Called at end of instruction cycle when a branch was just executed.
+    */
+	public static void tryChange() {
+	   tryState = TRYDELAY;
+	}
+
+   /**
+    * Clear the try-state. Called when exception occurs in delay slot.
+    */
+	public static void tryClean() {
+	   tryState = CLEARED;
+	}
+
+   /**
+    * @return true if a branch/jump instruction was just executed (before delay slot)
+    */
+	public static boolean isTryjbranch() {
+	   return tryState == TRYJBRANCH;
+	}
+
+   /**
+    * @return true if currently in a branch delay slot
+    */
+	public static boolean isTrydelay() {
+	   return tryState == TRYDELAY;
+	}
+
 }  // DelayedBranch

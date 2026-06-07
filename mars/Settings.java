@@ -115,6 +115,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       public static final int IGNORE_ARITHMETIC_OVERFLOW = 21;
       /**  Flag to count the cycles of different instructions */
       public static final int COUNT_CYCLES = 22;
+      /**  Flag to enable P7 exception/interrupt handling for BUAA CO course */
+      public static final int EXCEPTION_FOR_COURSE = 23;
    
       // NOTE: key sequence must match up with labels above which are used for array indexes!
       private static String[] booleanSettingsKeys = {"ExtendedAssembler", "BareMachine", "AssembleOnOpen", "AssembleAll",
@@ -123,7 +125,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          												"WarningsAreErrors", "ProgramArguments", "DataSegmentHighlighting",
          												"RegistersHighlighting", "StartAtMain", "EditorCurrentLineHighlighting",
          												"PopupInstructionGuidance", "PopupSyscallInput", "GenericTextEditor", 
-         												"AutoIndent", "SelfModifyingCode", "IgnoreArithmeticOverflow", "CountCycles" };
+         												"AutoIndent", "SelfModifyingCode", "IgnoreArithmeticOverflow", "CountCycles",
+         												"ExceptionForCourse" };
    
       /** Last resort default values for boolean settings; will use only  if neither
    	 *  the Preferences nor the properties file work. If you wish to change them, 
@@ -131,8 +134,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    	 *  Values are matched to keys by list position.
    	 */
       public static boolean[] defaultBooleanSettingsValues = { // match the above list by position
-                                              true, false, false, false, false, true, true, false, false, 
-         												 true, false, false, true, true, false, true, true, false, false, true, false, false, false };
+                                              true, false, false, false, false, true, true, false, false,
+         												 true, false, false, true, true, false, true, true, false, false, true, false, false, false, false };
    
       // STRING SETTINGS.  Each array position has associated name.
    	/** Current specified exception handler file (a MIPS assembly source file) */
@@ -364,6 +367,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
        public boolean getCountCycles() {
            return booleanSettingsValues[COUNT_CYCLES];
+       }
+
+       public boolean getExceptionForCourse() {
+           return booleanSettingsValues[EXCEPTION_FOR_COURSE];
+       }
+
+       public void setExceptionForCourse(boolean value) {
+           setBooleanSettingNonPersistent(EXCEPTION_FOR_COURSE, value);
        }
 
       public int getOutputLoggingLevel() {

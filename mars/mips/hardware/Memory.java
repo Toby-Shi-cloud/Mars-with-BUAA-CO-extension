@@ -360,6 +360,25 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          int outputValue = 0;
          int oldValue = 0;
          if (Globals.debug) System.out.println("memory["+address+"] set to "+value+"("+length+" bytes)");
+         // P7 Timer MMIO interception
+         if (Globals.getSettings().getExceptionForCourse()) {
+            if (address >= 0x7F00 && address < 0x7F0C) {
+               oldValue = TimerOne.getValue((address & 0xC) >> 2);
+               TimerOne.updateRegister((address & 0xC) >> 2, value);
+               TimerOne.setEnable(false);
+               return oldValue;
+            }
+            if (address >= 0x7F10 && address < 0x7F1C) {
+               oldValue = TimerTwo.getValue((address & 0xC) >> 2);
+               TimerTwo.updateRegister((address & 0xC) >> 2, value);
+               TimerTwo.setEnable(false);
+               return oldValue;
+            }
+            if (address >= 0x7F20 && address < 0x7F24) {
+               Globals.HWInt &= 0xFFFFFFFC; // clear timer interrupt bits on response
+               return 0;
+            }
+         }
          int relativeByteAddress;
          if (inDataSegment(address)) {
            // in data segment.  Will write one byte at a time, w/o regard to boundaries.
@@ -456,6 +475,25 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          if (address % WORD_LENGTH_BYTES != 0) {
             throw new AddressErrorException("store address not aligned on word boundary ",
                Exceptions.ADDRESS_EXCEPTION_STORE, address);
+         }
+         // P7 Timer MMIO interception
+         if (Globals.getSettings().getExceptionForCourse()) {
+            if (address >= 0x7F00 && address < 0x7F0C) {
+               oldValue = TimerOne.getValue((address & 0xC) >> 2);
+               TimerOne.updateRegister((address & 0xC) >> 2, value);
+               TimerOne.setEnable(false);
+               return oldValue;
+            }
+            if (address >= 0x7F10 && address < 0x7F1C) {
+               oldValue = TimerTwo.getValue((address & 0xC) >> 2);
+               TimerTwo.updateRegister((address & 0xC) >> 2, value);
+               TimerTwo.setEnable(false);
+               return oldValue;
+            }
+            if (address >= 0x7F20 && address < 0x7F24) {
+               Globals.HWInt &= 0xFFFFFFFC;
+               return 0;
+            }
          }
          if (inDataSegment(address)) {
            // in data segment
@@ -634,6 +672,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    	// Does the real work, but includes option to NOT notify observers.
        private int get(int address, int length, boolean notify) throws AddressErrorException {
          int value = 0;
+         // P7 Timer MMIO interception
+         if (Globals.getSettings().getExceptionForCourse()) {
+            if (address >= 0x7F00 && address < 0x7F0C) {
+               return TimerOne.getValue((address & 0xC) >> 2);
+            }
+            if (address >= 0x7F10 && address < 0x7F1C) {
+               return TimerTwo.getValue((address & 0xC) >> 2);
+            }
+            if (address >= 0x7F20 && address < 0x7F24) {
+               return 0; // interrupt generator reads always return 0
+            }
+         }
          int relativeByteAddress;
          if (inDataSegment(address)) {
            // in data segment.  Will read one byte at a time, w/o regard to boundaries.
@@ -707,6 +757,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          if (address % WORD_LENGTH_BYTES != 0) {
             throw new AddressErrorException("address for fetch not aligned on word boundary",
                Exceptions.ADDRESS_EXCEPTION_LOAD, address);
+         }
+         // P7 Timer MMIO interception
+         if (Globals.getSettings().getExceptionForCourse()) {
+            if (address >= 0x7F00 && address < 0x7F0C) {
+               return TimerOne.getValue((address & 0xC) >> 2);
+            }
+            if (address >= 0x7F10 && address < 0x7F1C) {
+               return TimerTwo.getValue((address & 0xC) >> 2);
+            }
+            if (address >= 0x7F20 && address < 0x7F24) {
+               return 0;
+            }
          }
          if (inDataSegment(address)) {
            // in data segment

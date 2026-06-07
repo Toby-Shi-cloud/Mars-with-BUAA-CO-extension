@@ -101,6 +101,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       public static String displayRFchanging = null;
       /** Use by DM to store the changing log string */
       public static String displayDMchanging = null;
+      /** Hardware interrupt pending bits for P7 (bit 0=Timer0, bit 1=Timer1) */
+      public static int HWInt = 0;
       /** display level, 0 (default) if print none, 1 if print std ans, 2 if print std debug */
 //      public static int displayLevel = 0;
       /** ignore arithmetic overflow if true */
@@ -139,8 +141,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             symbolTable = new SymbolTable("global");
             settings = new Settings(gui);
             initialized = true;
-            debug = false; 
+            debug = false;
 				memory.clear(); // will establish memory configuration from setting
+				HWInt = 0;
          }
       }
    	

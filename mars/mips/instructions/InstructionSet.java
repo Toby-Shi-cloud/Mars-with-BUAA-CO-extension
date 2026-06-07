@@ -1189,7 +1189,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                   }
                }));					
          instructionList.add(
-                new BasicInstruction("syscall", 
+                new BasicInstruction("syscall",
             	 "Issue a system call : Execute the system call specified by value in $v0",
             	 BasicInstructionFormat.R_FORMAT,
                 "000000 00000 00000 00000 00000 001100",
@@ -1197,6 +1197,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
                   {
+                     if (Globals.getSettings().getExceptionForCourse()) {
+                        // P7: syscall always generates exception with ExcCode=8
+                        throw new ProcessingException(statement, "syscall", Exceptions.SYSCALL_EXCEPTION);
+                     }
                      findAndSimulateSyscall(RegisterFile.getValue(2),statement);
                   }
                }));

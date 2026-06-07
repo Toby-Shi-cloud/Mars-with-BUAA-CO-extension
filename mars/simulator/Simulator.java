@@ -7,6 +7,9 @@
    import java.util.*;
    import javax.swing.*;
    import java.awt.event.*;
+   // P7 timer imports
+   import mars.mips.hardware.TimerOne;
+   import mars.mips.hardware.TimerTwo;
 	
 	/*
 Copyright (c) 2003-2010,  Pete Sanderson and Kenneth Vollmar
@@ -323,19 +326,36 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          	
             int pc = 0;  // added: 7/26/06 (explanation above)
             
+            // P7: previous IRQ state for interrupt checking
+            boolean prevIRQ = false;
+
             while (statement != null) {
+               // P7: enable timers at start of each instruction cycle
+               if (Globals.getSettings().getExceptionForCourse()) {
+                  TimerOne.setEnable(true);
+                  TimerTwo.setEnable(true);
+               }
                pc = RegisterFile.getProgramCounter(); // added: 7/26/06 (explanation above)
-               RegisterFile.incrementPC();           	
+               RegisterFile.incrementPC();
             	// Perform the MIPS instruction in synchronized block.  If external threads agree
-            	// to access MIPS memory and registers only through synchronized blocks on same 
-            	// lock variable, then full (albeit heavy-handed) protection of MIPS memory and 
+            	// to access MIPS memory and registers only through synchronized blocks on same
+            	// lock variable, then full (albeit heavy-handed) protection of MIPS memory and
             	// registers is assured.  Not as critical for reading from those resources.
                synchronized (Globals.memoryAndRegistersLock) {
-                  try {                      
+                  try {
                      if (Simulator.externalInterruptingDevice != NO_DEVICE) {
                         int deviceInterruptCode = externalInterruptingDevice;
                         Simulator.externalInterruptingDevice = NO_DEVICE;
                         throw new ProcessingException(statement, "External Interrupt", deviceInterruptCode);
+                     }
+                     // P7: check for hardware interrupts before instruction execution
+                     if (Globals.getSettings().getExceptionForCourse()) {
+                        boolean tmp = prevIRQ;
+                        Coprocessor0.updateCause();
+                        prevIRQ = Coprocessor0.isIter();
+                        if (tmp && (Coprocessor0.getValue(Coprocessor0.STATUS) & 2) == 0) {
+                           throw new ProcessingException(0); // Int exception, ExcCode=0
+                        }
                      }
                      BasicInstruction instruction = (BasicInstruction)statement.getInstruction();
                      if (instruction == null) {
@@ -347,6 +367,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      Globals.displayRFchanging = null;
                      Globals.displayDMchanging = null;
                      instruction.getSimulationCode().simulate(statement);
+                     // P7: update timers after instruction execution
+                     if (Globals.getSettings().getExceptionForCourse()) {
+                        TimerOne.update();
+                        TimerTwo.update();
+                        // Handle delayed branch try-state
+                        if (DelayedBranch.isTrydelay()) {
+                           DelayedBranch.tryClean();
+                        }
+                        if (DelayedBranch.isTryjbranch()) {
+                           DelayedBranch.tryChange();
+                        }
+                     }
                      cycleCounter.update(statement);  // added 3-Sept-2024, by swkfk to count cycles
                      if (Globals.getSettings().getOutputLoggingLevel() == 2) { // added 1-Nov-2022, by Toby to support BUAA CO.
                         SystemIO.printLog(String.format("@PC%08x -> %s (%08x)\n",
@@ -379,15 +411,29 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                      if (Globals.getSettings().getBackSteppingEnabled()) {
                         Globals.program.getBackStepper().addDoNothing(pc);
                      }
-                  } 
+                  }
                       catch (ProcessingException pe) {
-                        if (pe.errors() == null) {
+                        // P7: update timers on exception too
+                        if (Globals.getSettings().getExceptionForCourse()) {
+                           TimerOne.update();
+                           TimerTwo.update();
+                        }
+                        if (pe.isEpcNotAligned()) {
+                           // P7: EPC not aligned - fatal error
+                           this.constructReturnReason = EXCEPTION;
+                           this.pe = pe;
+                           this.done = true;
+                           SystemIO.resetFiles();
+                           Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
+                           return new Boolean(done);
+                        }
+                        if (pe.errors() == null && !Globals.getSettings().getExceptionForCourse()) {
                            this.constructReturnReason = NORMAL_TERMINATION;
                            this.done = true;
                            SystemIO.resetFiles(); // close any files opened in MIPS program
                            Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
                            return new Boolean(done); // execution completed without error.
-                        } 
+                        }
                         else {
                            // See if an exception handler is present.  Assume this is the case
                         	// if and only if memory location Memory.exceptionHandlerAddress
@@ -397,7 +443,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                            ProgramStatement exceptionHandler = null;
                            try {
                               exceptionHandler = Globals.memory.getStatement(Memory.exceptionHandlerAddress);
-                           } 
+                           }
                                catch (AddressErrorException aee) { } // will not occur with this well-known addres
                            if (exceptionHandler != null) {
                               RegisterFile.setProgramCounter(Memory.exceptionHandlerAddress);
@@ -469,11 +515,56 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                
             
                // Get next instruction in preparation for next iteration.
-            
+
+               // P7: check PC alignment and range before fetch
+               if (Globals.getSettings().getExceptionForCourse()) {
+                  int nextPC = RegisterFile.getProgramCounter();
+                  if ((nextPC % 4) != 0 || nextPC < Memory.textBaseAddress || nextPC > Memory.kernelTextLimitAddress) {
+                     // Handle fetch exception inline
+                     ProcessingException fetchPe = new ProcessingException(Exceptions.INSTRUCTION_EXCEPTION_LOAD);
+                     ProgramStatement exceptionHandler = null;
+                     try {
+                        exceptionHandler = Globals.memory.getStatement(Memory.exceptionHandlerAddress);
+                     } catch (AddressErrorException aee) { }
+                     if (exceptionHandler != null) {
+                        RegisterFile.setProgramCounter(Memory.exceptionHandlerAddress);
+                        statement = exceptionHandler;
+                        continue;
+                     } else {
+                        this.constructReturnReason = EXCEPTION;
+                        this.pe = fetchPe;
+                        this.done = true;
+                        SystemIO.resetFiles();
+                        Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
+                        return new Boolean(done);
+                     }
+                  }
+               }
+
                try {
                   statement = Globals.memory.getStatement(RegisterFile.getProgramCounter());
-               } 
+               }
                    catch (AddressErrorException e) {
+                     if (Globals.getSettings().getExceptionForCourse()) {
+                        // P7: fetch exception - use INSTRUCTION_EXCEPTION_LOAD
+                        ProcessingException fetchPe = new ProcessingException(Exceptions.INSTRUCTION_EXCEPTION_LOAD);
+                        ProgramStatement exceptionHandler = null;
+                        try {
+                           exceptionHandler = Globals.memory.getStatement(Memory.exceptionHandlerAddress);
+                        } catch (AddressErrorException aee) { }
+                        if (exceptionHandler != null) {
+                           RegisterFile.setProgramCounter(Memory.exceptionHandlerAddress);
+                           statement = exceptionHandler;
+                           continue;
+                        } else {
+                           this.constructReturnReason = EXCEPTION;
+                           this.pe = fetchPe;
+                           this.done = true;
+                           SystemIO.resetFiles();
+                           Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
+                           return new Boolean(done);
+                        }
+                     }
                      ErrorList el = new ErrorList();
                      el.add(new ErrorMessage((MIPSprogram)null,0,0,"invalid program counter value: "+Binary.intToHexString(RegisterFile.getProgramCounter())));
                      this.pe = new ProcessingException(el,e);
