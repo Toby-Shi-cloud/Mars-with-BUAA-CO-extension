@@ -3,164 +3,165 @@
 
 ## 这是什么？
 
-这是一个魔改版 Mars，专用于 BUAA 的计算机组成实验与编译原理实验。
+基于 `Mars 4.5` 开发的魔改版，用于 BUAA 的**计算机组成（CO）**实验。核心用途：**把它当作"黄金模型"，输出 CPU 写寄存器/写内存的轨迹，与你自己的 CPU（Logisim/Verilog）对拍**；P7 还支持 **CP0 异常 / 外部中断 / Timer** 的建模，可与 P7 整机对拍。
 
-基于 [Mars 4.5](http://courses.missouristate.edu/KenVollmar/MARS/) 开发
+> 绝大部分新增功能只在**命令行**使用：`java -jar Mars.jar <asm文件> [参数...]`。命令 `java -jar Mars.jar h` 可查看完整参数。参数不区分大小写。
+>
+> **声明：** P7 相关支持迁移自课程官方 Mars P7（参考官方 P7 版本实现）。
 
-## 与原版有什么不同？
+---
 
-1. 支持输出课程实验要求 CPU 输出的内容，因此能方便与自己的 CPU 进行测试/对拍。
-2. 新增支持：加载额外的指令！
-3. 重大更新：在 0.4.0 以后，所有新增内容可在图形界面使用！(全都在 `Setting` 的最下方)
-4. 新增支持：统计不同种类指令的执行次数，并计算周期数！
-5. 新增支持：P7 异常与中断处理相关功能。
+## 一、最常用：CO 对拍
 
-> **声明：** P7 相关支持迁移自课程官方 Mars P7（参考官方 P7 版本实现）
-
-### P7 异常与中断功能
-
-本扩展在原版 Mars 基础上新增了 P7 所需的异常与中断处理功能，包括：
-
-1. **异常处理增强**：
-   - 支持 P7 标准的异常处理流程，包括 BD（Branch Delay）位支持
-   - 支持 PC 未对齐/取指异常检测
-   - 异常发生时正确设置 EPC 和 CAUSE 寄存器
-
-2. **定时器外设**：
-   - Timer0：内存映射地址 `0x7F00~0x7F0B`（包含 CTRL、PRESET、COUNT 三个寄存器）
-   - Timer1：内存映射地址 `0x7F10~0x7F1B`
-   - 状态机模型：IDLE → LOAD → CNT → INT
-
-3. **中断机制**：
-   - 全局变量 `HWInt` 用于管理硬件中断待处理位（bit0 对应 Timer0，bit1 对应 Timer1）
-   - 支持通过 Coprocessor0 的 Cause 寄存器 IP 位检测中断
-   - 支持中断响应条件判断（Status.EXL=0, Status.IE=1）
-
-4. **内存映射 I/O**：
-   - 定时器寄存器通过 MMIO 方式访问
-   - 中断响应寄存器地址 `0x7F20`（写入清除中断标志）
-
-## 如何使用？
-
-绝大部分新扩展的功能只支持在命令行使用。
-
-在原版基础上新增命令行指令如下（在命令行界面输出 `java -jar Mars.jar h` 也能快速查看原版指令和新增指令的提示信息）（指令均不区分大小写）：
-
-1. `coERR`：将本扩展打印的任何内容（扩展版本信息除外）打印到 `stderr` 而非默认的 `stdout`
-2. `coL1`：打印寄存器修改和内存修改信息，与 `P4` 要求相同
-3. `coL2`：打印额外信息，方便逐步查错和调试
-4. `mc CompactLargeText`: 在原版 `mc CompactDataAtZero` 的基础上支持多达 $4096$ 条 $32$ 位机器码（此设置可在 `GUI` 界面使用）
-5. `mc FixedCompactLargeText`: 针对`P4-P6`使用过超大测试数据但是数据可能并不合法的情况，可以使用这条配置以进行错误处理，这条配置将exception handler放置于userdata之外，以便单独编写代码。
-6. `ig`：忽略全部算术溢出
-7. `cl <class>`：加载 `.class` 文件以支持额外的指令。
-   > 请务必把 `.class` 文件和 `Mars.jar` 放在相同目录下。
-   > 若已获取源代码，请把 `.class` 文件和 `Mars.java` 放在相同目录下。
-   > 
-   > 若要创建受支持的 `.class` 文件，你的 `class` 必须实现 `mars.mips.instructions.InstructionLoad` 接口。详细示例请见源码中的 `bhelbal.java`。
-   >
-   > [详细教程](#自定义额外指令教程)。
-
-8. `cc`：启用周期计数，会在程序运行结束时打印输出。
-9. `ccw 25:4:2:3:1`：设置不同种类指令的周期数，使用 `:` 分隔，分别为除法指令、乘法指令、跳转指令、访存指令、其他指令。支持浮点数，默认值为 `25:4:2:3:1`。
-10. `efc`：启用 P7 异常处理模式（Exception for Course），开启后将使用 P7 标准的异常处理流程，包括 BD 位支持和定时器中断。
-11. `p7irq=addr1,addr2,...`：设置 P7 外部中断触发的 PC 地址列表，多个地址用逗号分隔。使用此参数会自动启用 P7 异常处理模式。**注意**：该参数的中断注入行为是两周期延迟模型（详见下方 [p7irq 中断注入时序说明](#p7irq-中断注入时序说明)）。
-
-增加一个**拓展工具** `Cycles Counter`，可以实时统计不同种类指令的执行次数，并计算周期数与 CPI。位于菜单 `Tools -> Cycles Counter`。
-
-使用时，需要首先 `Connect to MIPS`，随后运行即可查看结果。你可以更改不同种类指令的周期数，会在下一次统计时生效。每轮运行结束，需要手动点击 `Reset` 清空结果。
-
-![运行示例](images/CyclesCounter.png)
-
-
-### 运行示例
-
-前往 [release](https://GitHub.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/releases/) 下载 `Mars_CO.jar` 和 `Mars_CO_example.zip`，然后在命令行运行：
+把一段 `.asm` 跑成"标准答案轨迹"。最常用的命令：
 
 ```sh
-java -jar mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
+# 非 P7（P4–P6）：打印寄存器/内存写、开延迟槽、干净输出
+java -jar Mars.jar test.asm nc db mc CompactLargeText coL1
+
+# P7：加 efc（异常/中断处理）；要测外部中断再加 p7irq=
+java -jar Mars.jar test.asm nc db mc CompactLargeText efc coL1
+java -jar Mars.jar test.asm nc db mc CompactLargeText efc coL1 p7irq=0x3100
 ```
 
-## 注意事项
-
-根据计组实验要求，建议搭配指令 `mc CompactLargeText` 使用
-
-另外，若要禁用版本信息，请使用指令 `nc`
-
-## p7irq 中断注入时序说明
-
-`p7irq=X` 参数的中断注入采用**两周期延迟模型**，即在地址 X 处注入中断信号，但指令 X 本身会被执行，**指令 X+4 被推迟**。
-
-### 执行时序
-
-MARS 的模拟循环中，中断注入和响应分为两步：
+`coL1` 输出格式（与课程 P4 要求一致，可直接与 testbench 的 `$display` 对拍）：
 
 ```
-周期 N   (PC=X)  : 注入 HWInt bit2 → 检测中断(用上周期状态) → 执行指令 X
-周期 N+1 (PC=X+4): 检测中断(本周期生效) → 触发异常 → 指令 X+4 不执行
+@00003000: $ 1 <= 00000001       # 寄存器写：@PC: $寄存器号 <= 值
+@00003004: *00001004 <= 00000002 # 内存写：  @PC: *地址 <= 值
 ```
 
-具体来说：
+### 核心参数（按重要性排序）
+
+| 参数 | 作用 |
+|---|---|
+| **`coL1`** | **对拍核心**：打印寄存器写 / 内存写（P4 格式）。写 `$0` 不打印 |
+| **`mc <config>`** | 内存配置。课程用 **`CompactLargeText`**（text@0x3000、异常入口 0x4180、最多 4096 条指令）；P4–P6 测试数据可能非法时可用 `FixedCompactLargeText`（异常处理段放到用户数据之外，便于单独编写） |
+| **`db`** | 启用 MIPS 延迟槽（**P5/P6/P7 必须**；否则跳转/分支后那条指令不会执行，与流水线 CPU 不一致，导致对拍出错） |
+| **`efc`** | **启用 P7 异常/中断处理**：CP0（SR/Cause/EPC）建模、异常派发到 0x4180、按 BUAA 语义设置 EPC/BD/EXL/ExcCode、定时器与中断 |
+| **`p7irq=0x..,0x..`** | **P7 外部中断调度**：当"已提交 PC"命中列表中的某地址时注入外部中断（HWInt 第 2 位），每个地址只触发一次。会自动启用 `efc`。时序见[下文](#二p7-对拍专题重点) |
+| **`nc`** | 不打印版权信息（重定向/管道时更干净） |
+
+### 其他参数
+
+| 参数 | 作用 |
+|---|---|
+| `coL2` | 调试级输出：逐条打印 `@PC -> 汇编 (机器码)` 及读写，便于单步查错 |
+| `coERR` | 把本扩展打印的内容输出到 `stderr`（默认 `stdout`） |
+| `ig` | 忽略全部算术溢出（**对拍 P7 溢出异常时不要加**） |
+| `a` | 只汇编、不仿真（配合 `dump`） |
+| `dump <段> <格式> <文件>` | 导出内存段。导出机器码：`a dump .text HexText code.txt test.asm`；导出内核段：`a dump 0x00004180-0x00004ffc HexText kernel.txt test.asm` |
+| `cl <class>` | 加载 `.class` 扩展指令（见[教程](#五自定义额外指令教程)） |
+| `cc` / `ccw <除:乘:跳:访存:其他>` | 统计指令并估算周期 / 设置各类指令周期权重（默认 `25:4:2:3:1`，浮点可用）。**注意：是估算，并非某具体流水线的精确周期** |
+
+---
+
+## 二、P7 对拍专题（重点）
+
+`efc` 在原版基础上新增 P7 所需的异常与中断处理：
+
+- **CP0 与异常**：`SR`（IM=bit15:10、EXL=bit1、IE=bit0）、`Cause`（BD=bit31、IP=bit15:10、ExcCode=bit6:2）、`EPC`；异常码 `Int=0, AdEL=4, AdES=5, Syscall=8, RI=10, Ov=12`。异常时设 ExcCode、`EXL←1`、`EPC←`故障 PC（延迟槽则置 BD 且 EPC←PC-4），派发到 **0x4180**；`eret` 恢复 PC=EPC 并清 EXL。支持 PC 未对齐/取指异常检测。这些与标准 BUAA CP0 逐位一致。
+- **定时器外设**：Timer0 `0x7F00~0x7F0B`、Timer1 `0x7F10~0x7F1B`（CTRL/PRESET/COUNT 三寄存器，状态机 IDLE→LOAD→CNT→INT）。
+- **中断机制**：全局 `HWInt`（bit0=Timer0，bit1=Timer1，bit2=外部中断）经 Cause.IP 检测；中断响应条件 `EXL=0 && IE=1 && (HWInt & IM)≠0`。
+- **MMIO**：定时器寄存器与中断响应寄存器 `0x7F20`（写入即清除外部中断标志）均按 MMIO 访问，**不产生内存写轨迹**（与 Verilog 一致）。
+
+### p7irq 中断注入时序（务必看懂"减 4"）
+
+`p7irq=X` 采用**两周期延迟模型**：在 PC=X 处注入中断，但**指令 X 仍会执行**，被推迟的是**下一条 X+4**。
 
 | 周期 | PC | 动作 | 结果 |
 |------|-----|------|------|
-| N | X | 设置 `HWInt bit2`；用上一轮 `prevIRQ`(=false) 判断，不触发中断 | **指令 X 正常执行** |
-| N+1 | X+4 | `prevIRQ`=true，满足中断条件，触发异常 | **指令 X+4 被推迟**，EPC=X |
+| N   | X   | 置 `HWInt bit2`；用上一轮 `prevIRQ`(=false) 判断，不触发 | **指令 X 正常执行** |
+| N+1 | X+4 | `prevIRQ`=true，满足中断条件，触发异常 | **指令 X+4 被推迟**，`EPC=X+4` |
 
-异常触发后，EPC 指向 X（已执行的指令），CPU 跳转到异常处理程序。`eret` 返回后从 EPC=X 处继续，即重新执行指令 X+4。
+即：X 执行 → 进异常处理 → `eret` 回到 `EPC=X+4` → **重新执行 X+4**。
 
-### 示例
+若你的 CPU 按 **M 级宏观 PC（macroscopic_pc）** 采样：testbench 在 `macroscopic_pc == target` 时推迟 `target`（`EPC=target`）。要让两端推迟**同一条指令**、EPC 一致：
 
-若要让指令在地址 `0x00400010` 处被推迟执行（即中断发生在该指令处）：
-- MARS 使用 `p7irq=0x0040000c`（目标减 4）
-- 实际效果：指令 `0x0040000c` 执行，指令 `0x00400010` 被推迟到异常处理返回后
+> ⚠️ **testbench 的 `target_pc` = MARS 的 `p7irq` 地址 + 4**（即 MARS `p7irq` = 目标地址 − 4）。
+>
+> 例：要让 `0x00400010` 被推迟执行 → MARS 用 `p7irq=0x0040000c`（0x...0c 执行、0x...10 推迟）。
 
-## 自定义额外指令教程
-> 若不希望自行编写代码，需要使用课程组提供的 `.class` 文件，详见下方“使用课程组指令”部分说明。
+### 异常处理程序约定（先清中断、再读 Cause）
+
+外部中断需由程序写 **0x7F20** 来响应/清除，否则 testbench 会持续拉高 `interrupt` 造成中断风暴。**关键顺序：先写 0x7F20，再读 Cause**——本 Mars 进入异常即清外部 IP 位，而 Verilog 要等程序写 0x7F20 后才落下 `interrupt`；若先读 Cause，两端 IP 位会不一致导致对拍差异。推荐统一处理程序：
+
+```mips
+.ktext 0x4180
+    ori  $k0, $0, 0x7f20    # 先 ack/清外部中断
+    sw   $0, 0($k0)
+    mfc0 $k0, $13           # 再读 Cause（此时两端 IP 都已清）
+    andi $k1, $k0, 0x7c     # 取 ExcCode
+    beq  $k1, $0, _ret      # ExcCode==0 → 外部中断：直接返回（重执行被推迟指令）
+    nop
+    mfc0 $k0, $14           # 其他异常：EPC += 4 跳过出错指令
+    addi $k0, $k0, 4
+    mtc0 $k0, $14
+_ret:
+    eret
+```
+
+### 两点重要差异
+
+1. **复位 SR 差异**：本 Mars 复位 `SR=0x0000FF11`（IE=1、IM 全开），典型 Verilog CPU 复位 `SR=0`。对拍程序应在开头**显式设置 SR**（如 `ori $k0,$0,0x1001; mtc0 $k0,$12`）让两端一致后再触发中断。
+2. **Timer 中断不易对拍**：本 Mars 的 Timer 按"每条指令"推进，Verilog 的 Timer 按"每个时钟周期"推进，二者计数无法对应
+
+---
+
+## 四、运行示例
+
+前往 [release](https://GitHub.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/releases/) 下载 `Mars_CO.jar` 与 `Mars_CO_example.zip`：
+
+```sh
+java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
+```
+
+> 0.4.0 之后，绝大部分新增功能也能在图形界面使用（集中在 `Setting` 最下方）。
+
+---
+
+## 五、自定义额外指令教程
+> 若不想自行编写代码、需使用课程组提供的 `.class`，详见下方"使用课程组指令"。
+
 ### 准备工作
 
-1. 如要进行指令扩展，建议下载本仓库源码（也可以只下载 jar，若只下载 jar，需要在编译时添加本 jar 作为依赖）
-2. 在根目录（与 Mars.java 同级或与 Mars.jar 同级）下创建一个新 java 类，类名应该为指令的名字。例如，若要创建指令 `behlbal`，则类名应该为 `behlbal`，文件名为 `behlbal.java`。
+1. 如要扩展指令，建议下载本仓库源码（也可只下载 jar，编译时把本 jar 作为依赖）。
+2. 在根目录（与 `Mars.java` 或 `Mars.jar` 同级）创建一个 Java 类，类名即指令名。例如指令 `behlbal` → 文件 `behlbal.java`。
 
 ### 编写代码
 
-1. 你的类必须实现接口 `AdditionalInstruction`，如果你的类是跳转指令，还需要实现`BranchOperation`里面的方法（无需继承）。
-2. `AdditionalInstruction` 要求你实现 5 个方法: `simulate`, `getTemplate`, `getDescription`, `getFormatStr`, `getEncoding`。
-   1. `void simulate(ProgramStatement statement) throws ProcessingException` 方法是指令的具体实现，你需要在这里实现指令的功能。
-    > 参数 `statement` 包含了本条指令的信息，一般情况下，你只需要使用到 `int[] getOperands()` 和 `int getOperand(int)` 方法，即获取所有操作数，和获取某个操作数（获取到的是寄存器编号，使用 `RegisterFile.getValue(int)` 方法可以获取寄存器的值）。  
-    > 如果你需要进行跳转，`BranchOperation` 中提供了多个方法可以使用: `void processBranch(int displacement)` 方法采用 `displacement` 相对地址寻址，`void processJump(int targetAddress)` 方法采用 `targetAddress` 绝对地址寻址，`void processReturnAddress(int register)` 则是用于需要 link 的指令，将返回地址存入指定编号的寄存器中。这些指令都会自动根据设置处理延迟槽。
-   2. `String getTemplate()` 方法用于在 Mars 图形化界面中展示示例。直接 return 一个指令使用的示例字符串即可。
-   3. `String getDescription()` 方法用于在 Mars 图形化界面中显示指令详细介绍。直接 return 一个字符串即可。
-   4. `String getFormatStr()` 方法用于标识你的指令的类型，目前有 `R`, `I`, `J`, `B` 可选。
-   5. `String getEncoding()` 方法用于标识你的指令的机器码组成。需要返回一个包括 32 位的字符串，其中指令机器码一定为 0/1 的地方填上 0/1，而操作数的地方填上 `f`/`s`/`t`，分别代表第一个/第二/第三操作数，另外还要在机器码的不同部分直接填上空格分隔。例如，`add $t1,$t2,$t3` 指令的机器码组成为 `000000 sssss ttttt fffff 00000 100000`，这里 `f`/`s`/`t` 就分别代表 `$t1`/`$t2`/`$t3` 在机器码中的位置。
+1. 类必须实现接口 `AdditionalInstruction`；若是跳转指令，还需实现 `BranchOperation` 里的方法（无需继承）。
+2. `AdditionalInstruction` 要求实现 5 个方法：`simulate`、`getTemplate`、`getDescription`、`getFormatStr`、`getEncoding`。
+   1. `void simulate(ProgramStatement statement) throws ProcessingException`：指令的具体实现。一般只需用 `int[] getOperands()` 和 `int getOperand(int)`（得到寄存器编号，用 `RegisterFile.getValue(int)` 取值）。需要跳转时，`BranchOperation` 提供 `processBranch(int displacement)`（相对寻址）、`processJump(int targetAddress)`（绝对寻址）、`processReturnAddress(int register)`（link，存返回地址）；它们会自动按设置处理延迟槽。
+   2. `String getTemplate()`：图形界面里展示的示例字符串。
+   3. `String getDescription()`：图形界面里显示的详细介绍。
+   4. `String getFormatStr()`：指令类型，`R`/`I`/`J`/`B` 之一。
+   5. `String getEncoding()`：32 位机器码组成。固定 0/1 处填 0/1，操作数处填 `f`/`s`/`t`（第 1/2/3 操作数），各部分用空格分隔。例如 `add $t1,$t2,$t3` → `000000 sssss ttttt fffff 00000 100000`。
 
 ### 编译
 
-1. 如果你下载了源代码，直接在根目录下执行 `javac -encoding UTF-8 -cp ./ <你的类名>.java`，编译你的类。
-2. 如果你没有下载源代码，在根目录下执行 `javac -encoding UTF-8 -cp Mars.jar <你的类名>.java`，编译你的类。
+1. 有源码：根目录执行 `javac -encoding UTF-8 -cp ./ <类名>.java`。
+2. 仅有 jar：`javac -encoding UTF-8 -cp Mars.jar <类名>.java`。
 
 ### 使用
 
-1. 将你的类和 Mars.jar 放在同一目录下。
-2. 在命令行使用 Mars 时，加入指令使用 `cl <你的类名>` 即可使用你的指令。
-3. 在图形化界面使用 Mars 时，点击 `Settings` -> `Load Instruction`，选择你的类，即可使用你的指令。
+1. 把你的类与 `Mars.jar` 放同一目录。
+2. 命令行：加 `cl <类名>`。
+3. 图形界面：`Settings` → `Load Instruction` 选择你的类。
 
-## 使用课程组指令教程
+## 六、使用课程组指令教程
 
-### 准备工作
-1. 下载课程组提供的`.class`文件，并放于某个不相干的文件夹中备用。
+1. 下载课程组提供的 `.class`，与 `Mars.jar` 放在**同一目录**。
+2. 命令行加 `cl <类名>`，或图形界面 `Settings` → `Load Instruction` 选择。
 
-> 加载、解析class部分的代码由fernflower工具协助完成。
-> 
-> fernflower工具的作者于2024年10月20日与世长辞，请允许我在此献上崇高的敬意。
+> 加载、解析 class 部分的代码由 fernflower 工具协助完成。fernflower 工具的作者于 2024 年 10 月 20 日与世长辞，请允许我在此献上崇高的敬意。
 
-### 使用
+## 七、周期计数器（Cycles Counter）
 
-1. 将你的类和 Mars.jar 放在**同一目录**下。
-2. 在命令行使用 Mars 时，加入指令使用 `cl <你的类名>` 即可使用你的指令。
-3. 在图形化界面使用 Mars 时，点击 `Settings` -> `Load Instruction`，选择你的类，即可使用你的指令。
+扩展工具，菜单 `Tools → Cycles Counter`：实时统计各类指令执行次数并计算周期数与 CPI。使用前先 `Connect to MIPS`，运行后查看；可改各类指令周期，下次统计生效；每轮结束需手动 `Reset` 清空。
+
+![运行示例](images/CyclesCounter.png)
 
 ## 版权声明
 
-请务必遵守[原版 Mars 版权声明](MARSlicense.txt)。
-
-本扩展和原版一致使用 MIT 协议。
+请务必遵守[原版 Mars 版权声明](MARSlicense.txt)。本扩展和原版一致使用 MIT 协议。
