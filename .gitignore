@@ -3,3 +3,4 @@ out/
 .idea/
 *.iml
 .attach_pid*
+*.class

@@ -1,5 +1,6 @@
    package mars;
    import mars.mips.instructions.syscalls.*;
+import java.util.ArrayList;
    import mars.mips.instructions.*;
    import mars.mips.hardware.*;
    import mars.assembler.*;
@@ -103,6 +104,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       public static String displayDMchanging = null;
       /** Hardware interrupt pending bits for P7 (bit 0=Timer0, bit 1=Timer1) */
       public static int HWInt = 0;
+      /** P7 external interrupt schedule: list of PC addresses where HWInt bit2 should fire */
+      public static ArrayList<Integer> p7IrqPcList = null;
       /** display level, 0 (default) if print none, 1 if print std ans, 2 if print std debug */
 //      public static int displayLevel = 0;
       /** ignore arithmetic overflow if true */
@@ -263,3 +266,4 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
    
    }
+

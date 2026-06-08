@@ -462,6 +462,22 @@ ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.
                continue;
             }
 
+            if (args[i].toLowerCase().startsWith("p7irq=")) { // P7 external interrupt schedule
+               String value = args[i].substring(6); // after "p7irq="
+               String[] addrs = value.split(",");
+               ArrayList<Integer> list = new ArrayList<Integer>();
+               for (String addr : addrs) {
+                  addr = addr.trim();
+                  try {
+                     list.add(Binary.stringToInt(addr));
+                  } catch (NumberFormatException nfe) {
+                     out.println("Invalid address in p7irq: " + addr);
+                  }
+               }
+               Globals.getSettings().setP7IrqPcList(list);
+               continue;
+            }
+
             if (args[i].equalsIgnoreCase("cc")) { // added 3-Sep-2024, by swkfk to count the cycles of the simulator.
                countCycles = true;
                continue;

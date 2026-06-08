@@ -335,6 +335,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                   TimerOne.setEnable(true);
                   TimerTwo.setEnable(true);
                }
+               // P7: inject external interrupt from schedule (p7irq)
+               if (Globals.getSettings().getExceptionForCourse()) {
+                  int p7irqPC = RegisterFile.getProgramCounter();
+                  if (Globals.getSettings().hasP7IrqAt(p7irqPC)) {
+                     Globals.HWInt |= 4; // External interrupt bit 2
+                     Globals.getSettings().markP7IrqFired(p7irqPC);
+                  }
+               }
                pc = RegisterFile.getProgramCounter(); // added: 7/26/06 (explanation above)
                RegisterFile.incrementPC();
             	// Perform the MIPS instruction in synchronized block.  If external threads agree
@@ -410,14 +418,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                   	// IF statement added 7/26/06 (explanation above)
                      if (Globals.getSettings().getBackSteppingEnabled()) {
                         Globals.program.getBackStepper().addDoNothing(pc);
-                     }
                   }
+               }
                       catch (ProcessingException pe) {
                         // P7: update timers on exception too
                         if (Globals.getSettings().getExceptionForCourse()) {
                            TimerOne.update();
                            TimerTwo.update();
                         }
+                        // P7: clear injected external interrupt bit
+                        Globals.HWInt &= ~4;
                         if (pe.isEpcNotAligned()) {
                            // P7: EPC not aligned - fatal error
                            this.constructReturnReason = EXCEPTION;
@@ -537,8 +547,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         SystemIO.resetFiles();
                         Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
                         return new Boolean(done);
-                     }
                   }
+               }
                }
 
                try {
@@ -659,3 +669,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
    
    }
+
+
+
