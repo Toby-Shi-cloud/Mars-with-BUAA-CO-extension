@@ -4,3 +4,5 @@ out/
 *.iml
 .attach_pid*
 *.class
+.claude
+*.jar
