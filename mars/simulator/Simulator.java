@@ -449,7 +449,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                            Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
                            return new Boolean(done);
                         }
-                        if (pe.errors() == null && !Globals.getSettings().getExceptionForCourse()) {
+                        if (!pe.isCourseException() && pe.errors() == null) {
                            this.constructReturnReason = NORMAL_TERMINATION;
                            this.done = true;
                            SystemIO.resetFiles(); // close any files opened in MIPS program
@@ -541,9 +541,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                // P7: check PC alignment and range before fetch
                if (Globals.getSettings().getExceptionForCourse()) {
                   int nextPC = RegisterFile.getProgramCounter();
-                  if ((nextPC % 4) != 0 || nextPC < Memory.textBaseAddress || nextPC > Memory.kernelTextLimitAddress) {
+                  if ((nextPC % 4) != 0 || !(Memory.inTextSegment(nextPC) || Memory.inKernelTextSegment(nextPC))) {
                      // Handle fetch exception inline
-                     ProcessingException fetchPe = new ProcessingException(Exceptions.INSTRUCTION_EXCEPTION_LOAD);
+                     ProcessingException fetchPe = new ProcessingException(Exceptions.ADDRESS_EXCEPTION_LOAD);
                      ProgramStatement exceptionHandler = null;
                      try {
                         exceptionHandler = Globals.memory.getStatement(Memory.exceptionHandlerAddress);
@@ -568,8 +568,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                }
                    catch (AddressErrorException e) {
                      if (Globals.getSettings().getExceptionForCourse()) {
-                        // P7: fetch exception - use INSTRUCTION_EXCEPTION_LOAD
-                        ProcessingException fetchPe = new ProcessingException(Exceptions.INSTRUCTION_EXCEPTION_LOAD);
+                        // P7: fetch exception - use ADDRESS_EXCEPTION_LOAD
+                        ProcessingException fetchPe = new ProcessingException(Exceptions.ADDRESS_EXCEPTION_LOAD);
                         ProgramStatement exceptionHandler = null;
                         try {
                            exceptionHandler = Globals.memory.getStatement(Memory.exceptionHandlerAddress);

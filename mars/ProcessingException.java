@@ -42,6 +42,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     public class ProcessingException extends Exception {
       private ErrorList errs;
       private boolean epcNotAligned;
+      private boolean isCourseException;
    
    /**
     * Constructor for ProcessingException.
@@ -133,6 +134,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
        public ProcessingException(int cause) {
          Exceptions.setRegisters(cause);
          epcNotAligned = false;
+         isCourseException = true;
        }
 
    /**
@@ -166,6 +168,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     **/
        public boolean isEpcNotAligned() {
          return epcNotAligned;
+       }
+
+   /**
+    * Returns whether this exception is a P7 course exception (interrupt, fetch error, etc).
+    * Used by the simulator to distinguish course exceptions from normal termination.
+    * @return true if this is a course exception
+    **/
+       public boolean isCourseException() {
+         return isCourseException;
        }
 
    }

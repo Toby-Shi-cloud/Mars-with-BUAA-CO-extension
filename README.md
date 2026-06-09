@@ -199,7 +199,7 @@ java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
 
 | 项目 | 官方 P7 Mars | 本 Mars | 说明 |
 |------|-------------|---------|------|
-| 取指异常检测 | 仅在初始 fetch 时检查 | 额外在每次 fetch 前检查 PC 对齐和范围 | `INSTRUCTION_EXCEPTION_LOAD`（ExcCode=-4，内部用）→ EPC=PC（不-4）；本 Mars 更严格 |
+| 取指异常检测 | 仅在初始 fetch 时检查 | 额外在每次 fetch 前检查 PC 对齐和范围 | 使用 `ADDRESS_EXCEPTION_LOAD`（ExcCode=4）+ `isFetchException=true` → EPC=PC（不-4）；本 Mars 更严格 |
 | 异常码 | 标准 MIPS（0=Int, 4=AdEL, 5=AdES, 8=Syscall, 10=RI, 12=Ov） | 相同 |  |
 | BD 位处理 | 有（DelayedBranch.isTrydelay） | 有（逻辑一致） | BD=1 时 EPC=故障指令地址−4（分支指令地址） |
 | eret | `PC=EPC; EXL=0`（无延迟槽） | 相同 | 通过 `setProgramCounter` 直接跳转，不经过延迟分支机制 |

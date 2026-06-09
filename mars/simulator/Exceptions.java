@@ -53,7 +53,6 @@ public class Exceptions {
    public static final int EXTERNAL_INTERRUPT_KEYBOARD = 0x00000040; // see comment above.
    public static final int EXTERNAL_INTERRUPT_DISPLAY  = 0x00000080; // see comment above.
 	public static final int ADDRESS_EXCEPTION_LOAD = 4;
-	public static final int INSTRUCTION_EXCEPTION_LOAD = -4; // P7: PC not aligned/fetch error
 	public static final int ADDRESS_EXCEPTION_STORE = 5;
 	public static final int SYSCALL_EXCEPTION = 8;
 	public static final int BREAKPOINT_EXCEPTION = 9;
@@ -66,22 +65,34 @@ public class Exceptions {
 	public static final int FLOATING_POINT_UNDERFLOW = 17;
 	
 	/**
-	 *  Given MIPS exception cause code, will place that code into 
+	 *  Given MIPS exception cause code, will place that code into
 	 *  coprocessor 0 CAUSE register ($13), set the EPC register to
-	 *  "current" program counter, and set Exception Level bit in STATUS register.
+	 *  "current" program counter minus 4, and set Exception Level bit in STATUS register.
 	 *
 	 *  @param cause The cause code (see Exceptions for a list)
 	 */
 	public static void setRegisters(int cause) {
+	  setRegisters(cause, false);
+	}
+
+	/**
+	 *  Given MIPS exception cause code, will place that code into
+	 *  coprocessor 0 CAUSE register ($13), set the EPC register, and set
+	 *  Exception Level bit in STATUS register.
+	 *
+	 *  @param cause The cause code (see Exceptions for a list)
+	 *  @param isFetchException true if this is a fetch exception (PC not aligned/out of range),
+	 *         in which case EPC = PC; otherwise EPC = PC - 4
+	 */
+	public static void setRegisters(int cause, boolean isFetchException) {
 	  if (mars.Globals.getSettings().getExceptionForCourse()) {
 	    // P7 exception handling with BD bit support
-	    if (cause == INSTRUCTION_EXCEPTION_LOAD) {
-	      // Fetch exception: EPC = PC (not PC-4)
-	      Coprocessor0.updateRegister(Coprocessor0.CAUSE, (Coprocessor0.getValue(Coprocessor0.CAUSE) & 0xFFFFFC83) | (-1 * cause << 2));
+	    Coprocessor0.updateRegister(Coprocessor0.CAUSE, (Coprocessor0.getValue(Coprocessor0.CAUSE) & 0xFFFFFC83) | (cause << 2));
+	    if (isFetchException) {
+	      // Fetch exception: EPC = PC (instruction was not executed)
 	      Coprocessor0.updateRegister(Coprocessor0.EPC, RegisterFile.getProgramCounter());
 	    } else {
-	      // Normal exception: EPC = PC - 4
-	      Coprocessor0.updateRegister(Coprocessor0.CAUSE, (Coprocessor0.getValue(Coprocessor0.CAUSE) & 0xFFFFFC83) | (cause << 2));
+	      // Normal exception: EPC = PC - 4 (instruction that caused the exception)
 	      Coprocessor0.updateRegister(Coprocessor0.EPC, RegisterFile.getProgramCounter() - Instruction.INSTRUCTION_LENGTH);
 	    }
 	    // Handle BD bit for branch delay slot
