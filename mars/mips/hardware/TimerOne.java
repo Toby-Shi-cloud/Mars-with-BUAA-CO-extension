@@ -5,7 +5,7 @@ import mars.Globals;
 
 /**
  * Timer0 peripheral for P7 BUAA CO.
- * Memory-mapped at 0x7F00~0x7F0B (CTRL/PRSET/Count).
+ * Memory-mapped at 0x7F00~0x7F0B (CTRL/PRESET/Count).
  * State machine: IDLE -> LOAD -> CNT -> INT.
  * @author Based on Mars_p7.jar decompilation
  */
@@ -90,18 +90,11 @@ public class TimerOne {
                     // Mode 00: stop, clear enable
                     updateRegister(CTRL, registers[CTRL].getValue() & 0xFFFFFFFE);
                     state = IDLE;
-                    break;
-                }
-                if ((registers[CTRL].getValue() & 6) == 2) {
-                    // Mode 01: continue, no IRQ
-                    state = IDLE;
+                } else {
+                    // Mode 01/10/11: clear IRQ, auto-restart (ctrl[0] stays set)
                     IRQ = 0;
-                    break;
+                    state = IDLE;
                 }
-                // Mode 10/11: reload and continue
-                updateRegister(CTRL, registers[CTRL].getValue() & 0xFFFFFFFE);
-                state = IDLE;
-                IRQ = 0;
                 break;
         }
         enable = false;

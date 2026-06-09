@@ -31,6 +31,10 @@ java -jar Mars.jar test.asm nc db mc CompactLargeText efc coL1 p7irq=0x3100
 @00003004: *00001004 <= 00000002 # 内存写：  @PC: *地址 <= 值
 ```
 
+> **`coL1` 追踪范围（即与 Verilog testbench 对拍的约定）**：
+> - ✅ 追踪：GRF 寄存器写（`$1`–`$31`，`$0` 不追踪）、数据存储器写（字对齐地址 + 全字值）
+> - ❌ 不追踪：`hi`/`lo` 内部寄存器写（MDU 内部，testbench 不产生对应事件）、CP0 寄存器写（`mtc0`）、MMIO 区域写（Timer `0x7F00~0x7F1B`、中断响应 `0x7F20`）
+
 ### 核心参数（按重要性排序）
 
 | 参数 | 作用 |
@@ -84,11 +88,11 @@ java -jar Mars.jar test.asm nc db mc CompactLargeText efc coL1 p7irq=0x3100
 
 ### 异常处理程序约定（先清中断、再读 Cause）
 
-外部中断需由程序写 **0x7F20** 来响应/清除，否则 testbench 会持续拉高 `interrupt` 造成中断风暴。**关键顺序：先写 0x7F20，再读 Cause**——本 Mars 进入异常即清外部 IP 位，而 Verilog 要等程序写 0x7F20 后才落下 `interrupt`；若先读 Cause，两端 IP 位会不一致导致对拍差异。推荐统一处理程序：
+外部中断需由程序写 **0x7F20** 来响应/清除，否则 testbench 会持续拉高 `interrupt` 造成中断风暴。**关键顺序：先写 0x7F20，再读 Cause**——本 Mars 在响应外部中断异常（ExcCode=0）时会清除外部 IP 位（HWInt bit2），但 Verilog testbench 要等程序写 0x7F20 后 `interrupt` 才落下；若先读 Cause，两端 IP 位会不一致导致对拍差异。推荐统一处理程序：
 
 ```mips
 .ktext 0x4180
-    ori  $k0, $0, 0x7f20    # 先 ack/清外部中断
+    ori  $k0, $0, 0x7f20    # 先清外部中断
     sw   $0, 0($k0)
     mfc0 $k0, $13           # 再读 Cause（此时两端 IP 都已清）
     andi $k1, $k0, 0x7c     # 取 ExcCode
@@ -104,7 +108,7 @@ _ret:
 ### 两点重要差异
 
 1. **复位 SR 差异**：本 Mars 复位 `SR=0x0000FF11`（IE=1、IM 全开），典型 Verilog CPU 复位 `SR=0`。对拍程序应在开头**显式设置 SR**（如 `ori $k0,$0,0x1001; mtc0 $k0,$12`）让两端一致后再触发中断。
-2. **Timer 中断不易对拍**：本 Mars 的 Timer 按"每条指令"推进，Verilog 的 Timer 按"每个时钟周期"推进，二者计数无法对应
+2. **Timer 中断不易对拍**：本 Mars 的 Timer 按"每条指令"推进，Verilog 的 Timer 按"每个时钟周期"推进，二者计数无法对应。定时器中断的精确时序对拍不可行，请使用外部中断（`p7irq`）来测试中断机制。
 
 ---
 
@@ -165,3 +169,85 @@ java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
 ## 版权声明
 
 请务必遵守[原版 Mars 版权声明](MARSlicense.txt)。本扩展和原版一致使用 MIT 协议。
+
+---
+
+## 附：与官方 P7 Mars / 课程规范的差异及注意事项
+
+本 Mars 基于官方课程组提供的 P7 Mars 改造，新增了 trace 输出、中断调度等能力。
+
+### CP0 模块
+
+| 项目 | 官方 P7 Mars | 本 Mars | 说明 |
+|------|-------------|---------|------|
+| SR 复位值 | `0x00000000`（IE=0, IM=0, EXL=0） | `0x0000FF11`（IE=1, IM 全开, EXL=0） | 本 Mars 预设中断全开，方便直接触发外部中断。对拍程序开头须显式 `mtc0 $t0, $12` 统一两端 SR 值 |
+| `updateCause()` | 有 | 有（实现一致） | 每个指令周期调用，从 `HWInt` 刷新 Cause.IP[15:10] |
+| `isIter()` | 有 | 有（实现一致） | 中断响应条件：`(Cause & Status & 0xFC00)≠0 && EXL=0 && IE=1` |
+| CP0 debug 打印 | `System.err.println(... change to ...)` | 已移除 | 无功能影响 |
+| PRId 寄存器 | 无 | 无 | 均未实现；官方 P7 Mars 和本 Mars 都只有 SR/Cause/EPC/Vaddr |
+
+### 中断机制
+
+| 项目 | 官方 P7 Mars | 本 Mars | 说明 |
+|------|-------------|---------|------|
+| HWInt 存储 | `Simulator.IRQ` / `Simulator.tmp`（static 变量） | `Globals.HWInt`（static int） | 本 Mars 改用单一 `HWInt` 变量，bit0=Timer0, bit1=Timer1, bit2=外部中断 |
+| 外部中断调度 | 不支持 | `p7irq=0x...,0x...` 参数 | 本 Mars 新增。在指定 PC 处注入 HWInt bit2，每个地址触发一次。`p7irq` 自动启用 `efc` |
+| 中断两周期延迟 | 相同（`prevIRQ`/`tmp` 机制） | `takeInterrupt && irqNow` 双重校验 | 防止 p7irq 注入周期的指令通过 `mtc0` 修改 IE/IM 后错误触发中断 |
+| 外部中断清除 | 不支持（官方无 p7irq） | 0x7F20 写入清除 HWInt bit2；Int 异常 (ExcCode=0) 入口时也清除 bit2 | Verilog testbench 仅靠 CPU 写 0x7F20 清除 `interrupt` 信号；两端清除时序不同，处理程序须先写 0x7F20 后读 Cause |
+
+### 异常处理
+
+| 项目 | 官方 P7 Mars | 本 Mars | 说明 |
+|------|-------------|---------|------|
+| 取指异常检测 | 仅在初始 fetch 时检查 | 额外在每次 fetch 前检查 PC 对齐和范围 | `INSTRUCTION_EXCEPTION_LOAD`（ExcCode=-4，内部用）→ EPC=PC（不-4）；本 Mars 更严格 |
+| 异常码 | 标准 MIPS（0=Int, 4=AdEL, 5=AdES, 8=Syscall, 10=RI, 12=Ov） | 相同 |  |
+| BD 位处理 | 有（DelayedBranch.isTrydelay） | 有（逻辑一致） | BD=1 时 EPC=故障指令地址−4（分支指令地址） |
+| eret | `PC=EPC; EXL=0`（无延迟槽） | 相同 | 通过 `setProgramCounter` 直接跳转，不经过延迟分支机制 |
+| EXL=1 时的内部异常 | 阻止（仅在 `!EXL` 时检查中断；内部异常通过 ProcessingException 自然阻止） | 不阻止（仍抛出 ProcessingException；但 handler 中通常无异常代码） | 边缘情况，正常对拍不触发 |
+
+### Timer 外设
+
+| 项目 | `P7_standard_timer_2019.v` | 本 Mars | 说明 |
+|------|---------------------------|---------|------|
+| 状态机 | IDLE→LOAD→CNT→INT→(回 IDLE) | 相同 | |
+| Mode 00 (ctrl[2:1]=00) | INT 状态清零 ctrl[0]，IRQ 保持，定时器停止 | 相同 | |
+| Mode 01/10/11 | INT 状态仅清零 IRQ，**ctrl[0] 保持**，回 IDLE 后自动重启 | 相同 | 修复前 Mode 10/11 错误清零了 ctrl[0] |
+| 时钟模型 | `always @(posedge clk)` | `update()` 每指令周期调用一次 | Timer 中断时序无法精确对拍，应使用 `p7irq` 测试中断 |
+| MMIO 写抑制 tick | 无（`WE` 为 1 时不执行 case 分支） | `setEnable(false)` 防止同周期 tick | 保守设计，等价于官方 Timer `else if (WE)` 分支跳过状态机 case |
+| COUNT 寄存器 | 只读 | 可写（`updateRegister(COUNT, val)` 直接设值） | 边缘情况；测试程序不应写 COUNT 寄存器 |
+| IRQ 输出 | `assign IRQ = ctrl[3] & _IRQ` | `updateIRQ()`：`IRQ≠0 && (CTRL&8)≠0 → HWInt` | 逻辑等价 |
+| CTRL 写入掩码 | `{28'h0, Din[3:0]}`（只取低 4 位） | `val & 0xF`（相同） | |
+
+### MMIO 地址空间
+
+| 地址范围 | 课程 Tutorial / 系统桥 | 本 Mars | 说明 |
+|---------|----------------------|---------|------|
+| `0x0000_0000 ~ 0x0000_2FFF` | 数据存储器 | 数据段（`CompactLargeText`/`FixedCompactLargeText`） | 一致 |
+| `0x0000_3000 ~ 0x0000_6FFF` | 指令存储器 | 文本段（`CompactLargeText`: 上限 0x6FFC） | 一致 |
+| `0x0000_4180` | 异常处理入口 | `Memory.exceptionHandlerAddress` | 一致 |
+| `0x0000_7F00 ~ 0x0000_7F0B` | Timer0（CTRL/PRESET/COUNT） | 同 | 一致 |
+| `0x0000_7F10 ~ 0x0000_7F1B` | Timer1 | 同 | 一致 |
+| `0x0000_7F20 ~ 0x0000_7F23` | 中断发生器响应 | 同；写入清除 HWInt bit2 | 一致 |
+
+### Trace 输出
+
+| 项目 | 官方 P7 Mars | 本 Mars | 说明 |
+|------|-------------|---------|------|
+| coL1 trace | 不支持 | `@PC: $reg <= value` / `@PC: *addr <= value` | 本 Mars 新增 |
+| GRF $0 写入 | — | 不输出 | 与 testbench `w_grf_addr != 0` 过滤一致 |
+| hi/lo 写入 | — | 不输出（$33/$34） | testbench 不追踪 MDU 内部寄存器 |
+| CP0 写入 | — | 不输出 | mtc0 不可见于 testbench `$display` |
+| MMIO 写入 | — | 不输出（Timer 0x7Fxx、中断响应 0x7F20） | testbench 的 DM 数组 `fixed_addr >> 2 < 4096` 保护同理 |
+| 内存地址格式 | — | 字对齐（`addr & ~0x3`） | testbench `fixed_addr = m_data_addr & 32'hfffffffc` 一致 |
+| 内存值格式 | — | 全字值（`outputValue`，含 byte-enable 拼合后的完整字） | testbench `fixed_wdata` 同理 |
+
+### 扩展参数
+
+| 参数 | 来源 | 说明 |
+|------|------|------|
+| `coL1` / `coL2` / `coERR` | 本 Mars 新增 | trace 输出和重定向 |
+| `efc` | 本 Mars 新增（参考官方 P7 Mars 的 `SettingsExceptionForCourse` GUI 开关，改造为命令行参数） | 启用全部 P7 异常/中断/CP0/定时器处理 |
+| `p7irq=0x..,0x..` | 本 Mars 新增 | 外部中断调度；自动启用 `efc` |
+| `ig` | 本 Mars 新增 | 忽略算术溢出（对拍时通常不加） |
+| `cl <class>` | 本 Mars 新增 | 加载额外指令 |
+| `cc` / `ccw` | 本 Mars 新增 | 指令周期统计 |

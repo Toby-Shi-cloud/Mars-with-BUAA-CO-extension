@@ -356,12 +356,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         Simulator.externalInterruptingDevice = NO_DEVICE;
                         throw new ProcessingException(statement, "External Interrupt", deviceInterruptCode);
                      }
-                     // P7: check for hardware interrupts before instruction execution
+                     // P7: check for hardware interrupts before instruction execution.
+                     // Uses two-cycle deferral: prevIRQ captures isIter() from the PREVIOUS cycle.
+                     // Must re-check isIter() this cycle because the instruction at p7irq PC
+                     // may have changed IE/IM via mtc0, which should suppress the interrupt.
                      if (Globals.getSettings().getExceptionForCourse()) {
-                        boolean tmp = prevIRQ;
+                        boolean takeInterrupt = prevIRQ;
                         Coprocessor0.updateCause();
-                        prevIRQ = Coprocessor0.isIter();
-                        if (tmp && (Coprocessor0.getValue(Coprocessor0.STATUS) & 2) == 0) {
+                        boolean irqNow = Coprocessor0.isIter();
+                        prevIRQ = irqNow;
+                        if (takeInterrupt && irqNow) {
                            throw new ProcessingException(0); // Int exception, ExcCode=0
                         }
                      }
@@ -372,8 +376,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                             Exceptions.RESERVED_INSTRUCTION_EXCEPTION);
                      }
                      // THIS IS WHERE THE INSTRUCTION EXECUTION IS ACTUALLY SIMULATED!
-                     Globals.displayRFchanging = null;
-                     Globals.displayDMchanging = null;
+                     Globals.displayRFchanging.clear();
+                     Globals.displayDMchanging.clear();
                      instruction.getSimulationCode().simulate(statement);
                      // P7: update timers after instruction execution
                      if (Globals.getSettings().getExceptionForCourse()) {
@@ -394,23 +398,23 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                            statement.getBasicAssemblyStatement(),
                            Integer.parseUnsignedInt(statement.getMachineStatement(), 2)
                         ));
-                        if (Globals.displayRFchanging != null) {
-                           SystemIO.printLog("\t\t" + Globals.displayRFchanging + '\n');
+                        for (String rf : Globals.displayRFchanging) {
+                           SystemIO.printLog("\t\t" + rf + '\n');
                         }
-                        if (Globals.displayDMchanging != null) {
-                           SystemIO.printLog("\t\t" + Globals.displayDMchanging + '\n');
+                        for (String dm : Globals.displayDMchanging) {
+                           SystemIO.printLog("\t\t" + dm + '\n');
                         }
                      } else if (Globals.getSettings().getOutputLoggingLevel() == 1) {
-                        if (Globals.displayRFchanging != null) {
+                        for (String rf : Globals.displayRFchanging) {
                            SystemIO.printLog(String.format("@%08x: %s\n",
                               pc,
-                              Globals.displayRFchanging
+                              rf
                            ));
                         }
-                        if (Globals.displayDMchanging != null) {
+                        for (String dm : Globals.displayDMchanging) {
                            SystemIO.printLog(String.format("@%08x: %s\n",
                               pc,
-                              Globals.displayDMchanging
+                              dm
                            ));
                         }
                      }
@@ -426,8 +430,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                            TimerOne.update();
                            TimerTwo.update();
                         }
-                        // P7: clear injected external interrupt bit
-                        Globals.HWInt &= ~4;
+                        // P7: clear external interrupt bit only when the exception IS Int (ExcCode==0)
+                        if (Globals.getSettings().getExceptionForCourse()) {
+                           int excCode = (Coprocessor0.getValue(Coprocessor0.CAUSE) >> 2) & 0x1F;
+                           if (excCode == 0) {
+                              Globals.HWInt &= ~4;
+                           }
+                        }
+                        // NOTE: isEpcNotAligned() is currently always false (the 4-arg
+                        // ProcessingException constructor is never invoked with ena=true).
+                        // Kept as a safety guard for potential future EPC-alignment checks.
                         if (pe.isEpcNotAligned()) {
                            // P7: EPC not aligned - fatal error
                            this.constructReturnReason = EXCEPTION;

@@ -475,6 +475,7 @@ ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.
                   }
                }
                Globals.getSettings().setP7IrqPcList(list);
+               Globals.getSettings().setExceptionForCourse(true); // p7irq auto-enables efc
                continue;
             }
 

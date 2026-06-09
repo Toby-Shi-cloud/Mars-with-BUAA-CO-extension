@@ -361,6 +361,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          int oldValue = 0;
          if (Globals.debug) System.out.println("memory["+address+"] set to "+value+"("+length+" bytes)");
          // P7 Timer MMIO interception
+         // Writes to timer registers update the timer state but suppress the
+         // per-cycle timer tick (setEnable(false)) to prevent the timer state
+         // machine from racing with the CPU write in the same cycle.
+         // In Verilog both the register write and the state machine tick occur
+         // on the same clock edge with a defined order; this is a conservative
+         // approximation.  Timer timing is inherently imprecise vs Verilog
+         // (see README § "两点重要差异").
          if (Globals.getSettings().getExceptionForCourse()) {
             if (address >= 0x7F00 && address < 0x7F0C) {
                oldValue = TimerOne.getValue((address & 0xC) >> 2);
@@ -375,7 +382,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                return oldValue;
             }
             if (address >= 0x7F20 && address < 0x7F24) {
-               Globals.HWInt &= 0xFFFFFFFC; // clear timer interrupt bits on response
+               Globals.HWInt &= ~4; // clear external interrupt bit (bit 2) on response
                return 0;
             }
          }
@@ -455,7 +462,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             if (Globals.getSettings().getOutputLoggingLevel() != 0)
                throw new AddressErrorException("store length not support", Exceptions.ADDRESS_EXCEPTION_STORE, address);
          }
-         Globals.displayDMchanging = String.format("*%08x <= %08x", address >> 2 << 2, outputValue);
+         Globals.displayDMchanging.add(String.format("*%08x <= %08x", address >> 2 << 2, outputValue));
          return oldValue;
       }
    	
@@ -476,7 +483,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             throw new AddressErrorException("store address not aligned on word boundary ",
                Exceptions.ADDRESS_EXCEPTION_STORE, address);
          }
-         // P7 Timer MMIO interception
+         // P7 Timer MMIO interception — same rationale as set() above
          if (Globals.getSettings().getExceptionForCourse()) {
             if (address >= 0x7F00 && address < 0x7F0C) {
                oldValue = TimerOne.getValue((address & 0xC) >> 2);
@@ -491,7 +498,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                return oldValue;
             }
             if (address >= 0x7F20 && address < 0x7F24) {
-               Globals.HWInt &= 0xFFFFFFFC;
+               Globals.HWInt &= ~4; // clear external interrupt bit (bit 2) on response
                return 0;
             }
          }

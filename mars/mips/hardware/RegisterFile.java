@@ -104,7 +104,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         ? Globals.program.getBackStepper().addRegisterFileRestore(num,regFile[i].setValue(val))
                      	: regFile[i].setValue(val);
                   // $display("$%d <= %h", WPC, Waddr, WData);
-                   Globals.displayRFchanging = String.format("$%2d <= %08x", num, val);
+                   Globals.displayRFchanging.add(String.format("$%2d <= %08x", num, val));
                    break;
                }
             }
@@ -113,11 +113,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             old = (Globals.getSettings().getBackSteppingEnabled())
                	      ? Globals.program.getBackStepper().addRegisterFileRestore(num,hi.setValue(val))
                			: hi.setValue(val);
+            // NOTE: hi ($33) is an internal CPU register, NOT part of GRF.
+            // The testbench does not trace hi/lo writes — adding them here
+            // would cause spurious mars-only diff events.
          }
          else if(num== 34){// updates the low register
             old = (Globals.getSettings().getBackSteppingEnabled())
                	      ? Globals.program.getBackStepper().addRegisterFileRestore(num,lo.setValue(val))
                			: lo.setValue(val);
+            // NOTE: lo ($34) is an internal CPU register, NOT part of GRF.
          }
          return old;
       }
