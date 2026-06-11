@@ -40,7 +40,7 @@ java -jar Mars.jar test.asm nc db mc CompactLargeText efc coL1 p7irq=0x3100
 | 参数 | 作用 |
 |---|---|
 | **`coL1`** | **对拍核心**：打印寄存器写 / 内存写（P4 格式）。写 `$0` 不打印 |
-| **`mc <config>`** | 内存配置。课程用 **`CompactLargeText`**（text@0x3000、异常入口 0x4180、最多 4096 条指令）；P4–P6 测试数据可能非法时可用 `FixedCompactLargeText`（异常处理段放到用户数据之外，便于单独编写） |
+| **`mc <config>`** | 内存配置。课程常用 **`CompactLargeText`**（text@0x3000、异常入口 0x4180）。P7 `efc` 模式按课程取指范围限制在 `0x3000~0x6FFC`；P4–P6 测试数据可能非法时可用 `FixedCompactLargeText`（异常处理段放到用户数据之外，便于单独编写） |
 | **`db`** | 启用 MIPS 延迟槽（**P5/P6/P7 必须**；否则跳转/分支后那条指令不会执行，与流水线 CPU 不一致，导致对拍出错） |
 | **`efc`** | **启用 P7 异常/中断处理**：CP0（SR/Cause/EPC）建模、异常派发到 0x4180、按 BUAA 语义设置 EPC/BD/EXL/ExcCode、定时器与中断 |
 | **`p7irq=0x..,0x..`** | **P7 外部中断调度**：当"已提交 PC"命中列表中的某地址时注入外部中断（HWInt 第 2 位），每个地址只触发一次。会自动启用 `efc`。时序见[下文](#二p7-对拍专题重点) |
@@ -64,10 +64,10 @@ java -jar Mars.jar test.asm nc db mc CompactLargeText efc coL1 p7irq=0x3100
 
 `efc` 在原版基础上新增 P7 所需的异常与中断处理：
 
-- **CP0 与异常**：`SR`（IM=bit15:10、EXL=bit1、IE=bit0）、`Cause`（BD=bit31、IP=bit15:10、ExcCode=bit6:2）、`EPC`；异常码 `Int=0, AdEL=4, AdES=5, Syscall=8, RI=10, Ov=12`。异常时设 ExcCode、`EXL←1`、`EPC←`故障 PC（延迟槽则置 BD 且 EPC←PC-4），派发到 **0x4180**；`eret` 恢复 PC=EPC 并清 EXL。支持 PC 未对齐/取指异常检测。这些与标准 BUAA CP0 逐位一致。
+- **CP0 与异常**：`SR`（IM=bit15:10、EXL=bit1、IE=bit0）、`Cause`（BD=bit31、IP=bit15:10、ExcCode=bit6:2）、`EPC`；异常码 `Int=0, AdEL=4, AdES=5, Syscall=8, RI=10, Ov=12`。异常时设 ExcCode、`EXL←1`、`EPC←`故障 PC（延迟槽则置 BD 且 EPC←PC-4），派发到 **0x4180**；`eret` 恢复 PC=EPC 并清 EXL。支持 PC 未对齐/取指异常检测，以及访存有效地址加法溢出的 AdEL/AdES 检测。这些与标准 BUAA CP0 逐位一致。
 - **定时器外设**：Timer0 `0x7F00~0x7F0B`、Timer1 `0x7F10~0x7F1B`（CTRL/PRESET/COUNT 三寄存器，状态机 IDLE→LOAD→CNT→INT）。
 - **中断机制**：全局 `HWInt`（bit0=Timer0，bit1=Timer1，bit2=外部中断）经 Cause.IP 检测；中断响应条件 `EXL=0 && IE=1 && (HWInt & IM)≠0`。
-- **MMIO**：定时器寄存器与中断响应寄存器 `0x7F20`（写入即清除外部中断标志）均按 MMIO 访问，**不产生内存写轨迹**（与 Verilog 一致）。
+- **MMIO**：Timer 仅支持 word 对齐访问；COUNT 只读，写 COUNT 抛出 AdES；byte/half 访问 Timer 抛出 AdEL/AdES；`0x7F20~0x7F23` 写入清除外部中断标志。MMIO 访问**不产生内存写轨迹**（与 Verilog 一致）。
 
 ### p7irq 中断注入时序（务必看懂"减 4"）
 
@@ -112,9 +112,35 @@ _ret:
 
 ---
 
+## 三、构建、测试与发布
+
+### 本地构建
+
+源码使用 UTF-8。Windows 默认代码页可能不是 UTF-8，直接 `javac` 会在中文注释处报 `unmappable character`；请使用仓库脚本：
+
+```bat
+CompileMarsClass.bat
+CreateMarsJar.bat
+```
+
+`CompileMarsClass.bat` 内部使用 `javac -encoding UTF-8 Mars.java @srcList.txt` 编译全部 Java 源码，`CreateMarsJar.bat` 将 class、配置、文档和资源打进 `Mars.jar`。
+
+### GitHub Actions
+
+`.github/workflows/build.yml` 会在手动触发、PR、`main/master` push 和 `v*.*` tag push 时运行：
+
+1. Windows + Temurin JDK 8 编译源码。
+2. 打包 `Mars_CO_<ref>.jar`。
+3. 递归打包 `test` 目录为 `Mars_Test_CO_<ref>.zip`。
+4. 运行原有 CO smoke tests。
+5. 运行 `test/run_p7_regression.bat`，覆盖 SR reset、CP0 写掩码、BD/EPC、取指异常、Timer COUNT 写异常、`eret` 等 P7 金标准行为。
+6. 仅在 `v*.*` tag 上创建 draft release 并上传 jar/zip。
+
+---
+
 ## 四、运行示例
 
-前往 [release](https://GitHub.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/releases/) 下载 `Mars_CO.jar` 与 `Mars_CO_example.zip`：
+前往 [release](https://GitHub.com/Toby-Shi-cloud/Mars-with-BUAA-CO-extension/releases/) 下载 `Mars_CO_<version>.jar` 与 `Mars_Test_CO_<version>.zip`：
 
 ```sh
 java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
@@ -134,8 +160,8 @@ java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
 
 ### 编写代码
 
-1. 类必须实现接口 `AdditionalInstruction`；若是跳转指令，还需实现 `BranchOperation` 里的方法（无需继承）。
-2. `AdditionalInstruction` 要求实现 5 个方法：`simulate`、`getTemplate`、`getDescription`、`getFormatStr`、`getEncoding`。
+1. 类必须实现接口 `InstructionLoad`；若是跳转/分支/link 指令，建议继承 `BranchOperation` 并使用其中的跳转辅助方法。
+2. `InstructionLoad` 要求实现 5 个方法：`simulate`、`getTemplate`、`getDescription`、`getFormatStr`、`getEncoding`。
    1. `void simulate(ProgramStatement statement) throws ProcessingException`：指令的具体实现。一般只需用 `int[] getOperands()` 和 `int getOperand(int)`（得到寄存器编号，用 `RegisterFile.getValue(int)` 取值）。需要跳转时，`BranchOperation` 提供 `processBranch(int displacement)`（相对寻址）、`processJump(int targetAddress)`（绝对寻址）、`processReturnAddress(int register)`（link，存返回地址）；它们会自动按设置处理延迟槽。
    2. `String getTemplate()`：图形界面里展示的示例字符串。
    3. `String getDescription()`：图形界面里显示的详细介绍。
@@ -181,7 +207,8 @@ java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
 | 项目 | 官方 P7 Mars | 本 Mars | 说明 |
 |------|-------------|---------|------|
 | SR 复位值 | `0x00000000`（IE=0, IM=0, EXL=0） | `0x00000000`（`efc` 课程模式） | 与课程 CPU 复位状态一致。非 `efc` 普通 MARS 模式保留原版 `0x0000FF11` 行为，避免影响 GUI/MMIO 工具 |
-| `updateCause()` | 有 | 有（实现一致） | 每个指令周期调用，从 `HWInt` 刷新 Cause.IP[15:10] |
+| CP0 写入掩码 | 课程可见位 | `SR & 0x0000FC03`，`Cause & 0x8000FC7C` | `SR` 只保留 IM/EXL/IE；`Cause` 只保留 BD/IP/ExcCode；EPC 原样写入 |
+| `updateCause()` | 有 | 有（实现一致） | 每个指令周期调用，从 `HWInt & 0x3F` 刷新 Cause.IP[15:10]，保留 BD/ExcCode |
 | `isIter()` | 有 | 有（实现一致） | 中断响应条件：`(Cause & Status & 0xFC00)≠0 && EXL=0 && IE=1` |
 | CP0 debug 打印 | `System.err.println(... change to ...)` | 已移除 | 无功能影响 |
 | PRId 寄存器 | 无 | 无 | 均未实现；官方 P7 Mars 和本 Mars 都只有 SR/Cause/EPC/Vaddr |
@@ -199,10 +226,11 @@ java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
 
 | 项目 | 官方 P7 Mars | 本 Mars | 说明 |
 |------|-------------|---------|------|
-| 取指异常检测 | 仅在初始 fetch 时检查 | 额外在每次 fetch 前检查 PC 对齐和范围 | 使用 `ADDRESS_EXCEPTION_LOAD`（ExcCode=4）+ `isFetchException=true` → EPC=PC（不-4）；本 Mars 更严格 |
+| 取指异常检测 | 仅在初始 fetch 时检查 | 额外在每次 fetch 前检查 PC 对齐和 P7 课程取指范围 `0x3000~0x6FFC` | 使用 `ADDRESS_EXCEPTION_LOAD`（ExcCode=4）+ `isFetchException=true` → EPC=PC（不-4）；本 Mars 更严格 |
 | 异常码 | 标准 MIPS（0=Int, 4=AdEL, 5=AdES, 8=Syscall, 10=RI, 12=Ov） | 相同 |  |
+| 访存地址计算溢出 | 课程要求 AdEL/AdES | `base + sign_ext(offset)` 若超出 32 位有符号范围，按 load/store 分别抛 AdEL/AdES | 仅 `efc` 课程模式启用 |
 | BD 位处理 | 有（DelayedBranch.isTrydelay） | 有（逻辑一致） | BD=1 时 EPC=故障指令地址−4（分支指令地址） |
-| eret | `PC=EPC; EXL=0`（无延迟槽） | 相同 | 通过 `setProgramCounter` 直接跳转，不经过延迟分支机制 |
+| eret | `PC=EPC; EXL=0`（无延迟槽） | 相同 | 清除延迟分支/延迟槽跟踪状态后，通过 `setProgramCounter` 直接跳转 |
 | EXL=1 时的内部异常 | 阻止（仅在 `!EXL` 时检查中断；内部异常通过 ProcessingException 自然阻止） | 不阻止（仍抛出 ProcessingException；但 handler 中通常无异常代码） | 边缘情况，正常对拍不触发 |
 
 ### Timer 外设
@@ -214,20 +242,22 @@ java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
 | Mode 01/10/11 | INT 状态仅清零 IRQ，**ctrl[0] 保持**，回 IDLE 后自动重启 | 相同 | 修复前 Mode 10/11 错误清零了 ctrl[0] |
 | 时钟模型 | `always @(posedge clk)` | `update()` 每指令周期调用一次 | Timer 中断时序无法精确对拍，应使用 `p7irq` 测试中断 |
 | MMIO 写抑制 tick | 无（`WE` 为 1 时不执行 case 分支） | `setEnable(false)` 防止同周期 tick | 保守设计，等价于官方 Timer `else if (WE)` 分支跳过状态机 case |
-| COUNT 寄存器 | 只读 | 可写（`updateRegister(COUNT, val)` 直接设值） | 边缘情况；测试程序不应写 COUNT 寄存器 |
+| COUNT 寄存器 | 只读 | 只读 | 对 `0x7F08`/`0x7F18` 执行 `sw` 会抛出 AdES |
 | IRQ 输出 | `assign IRQ = ctrl[3] & _IRQ` | `updateIRQ()`：`IRQ≠0 && (CTRL&8)≠0 → HWInt` | 逻辑等价 |
 | CTRL 写入掩码 | `{28'h0, Din[3:0]}`（只取低 4 位） | `val & 0xF`（相同） | |
+| 访问宽度/对齐 | word 对齐访问 | Timer 仅允许 word 对齐 `lw/sw`；byte/half 或非对齐访问抛出 AdEL/AdES | 与课程桥/外设接口一致 |
 
 ### MMIO 地址空间
 
 | 地址范围 | 课程 Tutorial / 系统桥 | 本 Mars | 说明 |
 |---------|----------------------|---------|------|
 | `0x0000_0000 ~ 0x0000_2FFF` | 数据存储器 | 数据段（`CompactLargeText`/`FixedCompactLargeText`） | 一致 |
-| `0x0000_3000 ~ 0x0000_6FFF` | 指令存储器 | 文本段（`CompactLargeText`: 上限 0x6FFC） | 一致 |
+| `0x0000_3000 ~ 0x0000_6FFF` | 指令存储器 | P7 `efc` 取指范围检查为 `0x3000~0x6FFC` | 一致；普通 `CompactLargeText` 仍保留更大的 MARS text 段上限 |
 | `0x0000_4180` | 异常处理入口 | `Memory.exceptionHandlerAddress` | 一致 |
 | `0x0000_7F00 ~ 0x0000_7F0B` | Timer0（CTRL/PRESET/COUNT） | 同 | 一致 |
 | `0x0000_7F10 ~ 0x0000_7F1B` | Timer1 | 同 | 一致 |
 | `0x0000_7F20 ~ 0x0000_7F23` | 中断发生器响应 | 同；写入清除 HWInt bit2 | 一致 |
+| 其他 `>=0x0000_7F00` 地址 | 未映射 MMIO | 抛 AdEL/AdES | 防止落入普通内存模型 |
 
 ### Trace 输出
 
