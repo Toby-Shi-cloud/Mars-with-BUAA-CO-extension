@@ -245,6 +245,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             stop = true;
             stopper = actor;
          }
+
+          private boolean isInvalidCourseFetchAddress(int address) {
+            return (address % Instruction.INSTRUCTION_LENGTH) != 0 ||
+               address < 0x00003000 || address > 0x00006FFC;
+         }
+
+          private ProgramStatement dispatchCourseFetchException() {
+            Exceptions.setRegisters(Exceptions.ADDRESS_EXCEPTION_LOAD, true);
+            ProgramStatement exceptionHandler = null;
+            try {
+               exceptionHandler = Globals.memory.getStatement(Memory.exceptionHandlerAddress);
+            }
+                catch (AddressErrorException aee) { }
+            if (exceptionHandler != null) {
+               RegisterFile.setProgramCounter(Memory.exceptionHandlerAddress);
+            }
+            return exceptionHandler;
+         }
       	
       
       	/**
@@ -275,9 +293,35 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             RegisterFile.initializeProgramCounter(pc);
             ProgramStatement statement = null;
             try {
-               statement = Globals.memory.getStatement(RegisterFile.getProgramCounter());
+               if (Globals.getSettings().getExceptionForCourse() &&
+                  isInvalidCourseFetchAddress(RegisterFile.getProgramCounter())) {
+                  statement = dispatchCourseFetchException();
+                  if (statement == null) {
+                     this.pe = new ProcessingException(Exceptions.ADDRESS_EXCEPTION_LOAD, true);
+                     this.constructReturnReason = EXCEPTION;
+                     this.done = true;
+                     SystemIO.resetFiles();
+                     Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
+                     return new Boolean(done);
+                  }
+               } else {
+                  statement = Globals.memory.getStatement(RegisterFile.getProgramCounter());
+               }
             } 
                 catch (AddressErrorException e) {
+                  if (Globals.getSettings().getExceptionForCourse()) {
+                     statement = dispatchCourseFetchException();
+                     if (statement != null) {
+                        // Continue simulation at the course exception handler.
+                     } else {
+                        this.pe = new ProcessingException(Exceptions.ADDRESS_EXCEPTION_LOAD, true);
+                        this.constructReturnReason = EXCEPTION;
+                        this.done = true;
+                        SystemIO.resetFiles();
+                        Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
+                        return new Boolean(done);
+                     }
+                  } else {
                   ErrorList el = new ErrorList();
                   el.add(new ErrorMessage((MIPSprogram)null,0,0,"invalid program counter value: "+Binary.intToHexString(RegisterFile.getProgramCounter())));
                   this.pe = new ProcessingException(el, e);
@@ -291,6 +335,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                   SystemIO.resetFiles(); // close any files opened in MIPS program
                   Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
                   return new Boolean(done);
+                  }
                }
             int steps = 0;
          	
@@ -541,20 +586,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                // P7: check PC alignment and range before fetch
                if (Globals.getSettings().getExceptionForCourse()) {
                   int nextPC = RegisterFile.getProgramCounter();
-                  if ((nextPC % 4) != 0 || !(Memory.inTextSegment(nextPC) || Memory.inKernelTextSegment(nextPC))) {
+                  if (isInvalidCourseFetchAddress(nextPC)) {
                      // Handle fetch exception inline
-                     ProcessingException fetchPe = new ProcessingException(Exceptions.ADDRESS_EXCEPTION_LOAD);
-                     ProgramStatement exceptionHandler = null;
-                     try {
-                        exceptionHandler = Globals.memory.getStatement(Memory.exceptionHandlerAddress);
-                     } catch (AddressErrorException aee) { }
+                     ProgramStatement exceptionHandler = dispatchCourseFetchException();
                      if (exceptionHandler != null) {
-                        RegisterFile.setProgramCounter(Memory.exceptionHandlerAddress);
                         statement = exceptionHandler;
                         continue;
                      } else {
                         this.constructReturnReason = EXCEPTION;
-                        this.pe = fetchPe;
+                        this.pe = new ProcessingException(Exceptions.ADDRESS_EXCEPTION_LOAD, true);
                         this.done = true;
                         SystemIO.resetFiles();
                         Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);
@@ -566,21 +606,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                try {
                   statement = Globals.memory.getStatement(RegisterFile.getProgramCounter());
                }
-                   catch (AddressErrorException e) {
+                  catch (AddressErrorException e) {
                      if (Globals.getSettings().getExceptionForCourse()) {
                         // P7: fetch exception - use ADDRESS_EXCEPTION_LOAD
-                        ProcessingException fetchPe = new ProcessingException(Exceptions.ADDRESS_EXCEPTION_LOAD);
-                        ProgramStatement exceptionHandler = null;
-                        try {
-                           exceptionHandler = Globals.memory.getStatement(Memory.exceptionHandlerAddress);
-                        } catch (AddressErrorException aee) { }
+                        ProgramStatement exceptionHandler = dispatchCourseFetchException();
                         if (exceptionHandler != null) {
-                           RegisterFile.setProgramCounter(Memory.exceptionHandlerAddress);
                            statement = exceptionHandler;
                            continue;
                         } else {
                            this.constructReturnReason = EXCEPTION;
-                           this.pe = fetchPe;
+                           this.pe = new ProcessingException(Exceptions.ADDRESS_EXCEPTION_LOAD, true);
                            this.done = true;
                            SystemIO.resetFiles();
                            Simulator.getInstance().notifyObserversOfExecutionStop(maxSteps, pc);

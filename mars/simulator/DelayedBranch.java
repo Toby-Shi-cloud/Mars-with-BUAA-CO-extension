@@ -124,6 +124,15 @@ public class DelayedBranch {
 	}
 
    /**
+    * Clear both the branch target state and the P7 delay-slot tracking state.
+    * Used by eret, which redirects PC immediately and has no delay slot.
+    */
+    public static void clearAll() {
+      clear();
+      tryClean();
+   }
+
+   /**
 	 *  Return registration status.  Is false initially, true after register() is called
 	 *  but becomes false after trigger() or clear() are called.  This method has package
 	 *  visibility.

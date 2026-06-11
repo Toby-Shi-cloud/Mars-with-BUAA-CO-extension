@@ -367,25 +367,39 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          // In Verilog both the register write and the state machine tick occur
          // on the same clock edge with a defined order; this is a conservative
          // approximation.  Timer timing is inherently imprecise vs Verilog
-         // (see README § "两点重要差异").
-         if (Globals.getSettings().getExceptionForCourse()) {
-            if (address >= 0x7F00 && address < 0x7F0C) {
-               oldValue = TimerOne.getValue((address & 0xC) >> 2);
-               TimerOne.updateRegister((address & 0xC) >> 2, value);
-               TimerOne.setEnable(false);
-               return oldValue;
-            }
-            if (address >= 0x7F10 && address < 0x7F1C) {
-               oldValue = TimerTwo.getValue((address & 0xC) >> 2);
-               TimerTwo.updateRegister((address & 0xC) >> 2, value);
-               TimerTwo.setEnable(false);
-               return oldValue;
-            }
-            if (address >= 0x7F20 && address < 0x7F24) {
-               Globals.HWInt &= ~4; // clear external interrupt bit (bit 2) on response
-               return 0;
-            }
-         }
+          // (see README § "两点重要差异").
+          if (Globals.getSettings().getExceptionForCourse()) {
+             if (inP7Timer0(address)) {
+                int timerRegister = p7TimerRegister(address);
+                if (length != WORD_LENGTH_BYTES || !wordAligned(address) || timerRegister == TimerOne.COUNT) {
+                   throw new AddressErrorException("invalid Timer0 store",
+                      Exceptions.ADDRESS_EXCEPTION_STORE, address);
+                }
+                oldValue = TimerOne.getValue(timerRegister);
+                TimerOne.updateRegister(timerRegister, value);
+                TimerOne.setEnable(false);
+                return oldValue;
+             }
+             if (inP7Timer1(address)) {
+                int timerRegister = p7TimerRegister(address);
+                if (length != WORD_LENGTH_BYTES || !wordAligned(address) || timerRegister == TimerTwo.COUNT) {
+                   throw new AddressErrorException("invalid Timer1 store",
+                      Exceptions.ADDRESS_EXCEPTION_STORE, address);
+                }
+                oldValue = TimerTwo.getValue(timerRegister);
+                TimerTwo.updateRegister(timerRegister, value);
+                TimerTwo.setEnable(false);
+                return oldValue;
+             }
+             if (inP7InterruptGenerator(address)) {
+                Globals.HWInt &= ~4; // clear external interrupt bit (bit 2) on response
+                return 0;
+             }
+             if (inP7MmioSpace(address)) {
+                throw new AddressErrorException("MMIO address out of range",
+                   Exceptions.ADDRESS_EXCEPTION_STORE, address);
+             }
+          }
          int relativeByteAddress;
          if (inDataSegment(address)) {
            // in data segment.  Will write one byte at a time, w/o regard to boundaries.
@@ -483,25 +497,39 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             throw new AddressErrorException("store address not aligned on word boundary ",
                Exceptions.ADDRESS_EXCEPTION_STORE, address);
          }
-         // P7 Timer MMIO interception — same rationale as set() above
-         if (Globals.getSettings().getExceptionForCourse()) {
-            if (address >= 0x7F00 && address < 0x7F0C) {
-               oldValue = TimerOne.getValue((address & 0xC) >> 2);
-               TimerOne.updateRegister((address & 0xC) >> 2, value);
-               TimerOne.setEnable(false);
-               return oldValue;
-            }
-            if (address >= 0x7F10 && address < 0x7F1C) {
-               oldValue = TimerTwo.getValue((address & 0xC) >> 2);
-               TimerTwo.updateRegister((address & 0xC) >> 2, value);
-               TimerTwo.setEnable(false);
-               return oldValue;
-            }
-            if (address >= 0x7F20 && address < 0x7F24) {
-               Globals.HWInt &= ~4; // clear external interrupt bit (bit 2) on response
-               return 0;
-            }
-         }
+          // P7 Timer MMIO interception — same rationale as set() above
+          if (Globals.getSettings().getExceptionForCourse()) {
+             if (inP7Timer0(address)) {
+                int timerRegister = p7TimerRegister(address);
+                if (timerRegister == TimerOne.COUNT) {
+                   throw new AddressErrorException("invalid Timer0 store",
+                      Exceptions.ADDRESS_EXCEPTION_STORE, address);
+                }
+                oldValue = TimerOne.getValue(timerRegister);
+                TimerOne.updateRegister(timerRegister, value);
+                TimerOne.setEnable(false);
+                return oldValue;
+             }
+             if (inP7Timer1(address)) {
+                int timerRegister = p7TimerRegister(address);
+                if (timerRegister == TimerTwo.COUNT) {
+                   throw new AddressErrorException("invalid Timer1 store",
+                      Exceptions.ADDRESS_EXCEPTION_STORE, address);
+                }
+                oldValue = TimerTwo.getValue(timerRegister);
+                TimerTwo.updateRegister(timerRegister, value);
+                TimerTwo.setEnable(false);
+                return oldValue;
+             }
+             if (inP7InterruptGenerator(address)) {
+                Globals.HWInt &= ~4; // clear external interrupt bit (bit 2) on response
+                return 0;
+             }
+             if (inP7MmioSpace(address)) {
+                throw new AddressErrorException("MMIO address out of range",
+                   Exceptions.ADDRESS_EXCEPTION_STORE, address);
+             }
+          }
          if (inDataSegment(address)) {
            // in data segment
             relative = (address - dataSegmentBaseAddress) >> 2; // convert byte address to words
@@ -679,18 +707,30 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    	// Does the real work, but includes option to NOT notify observers.
        private int get(int address, int length, boolean notify) throws AddressErrorException {
          int value = 0;
-         // P7 Timer MMIO interception
-         if (Globals.getSettings().getExceptionForCourse()) {
-            if (address >= 0x7F00 && address < 0x7F0C) {
-               return TimerOne.getValue((address & 0xC) >> 2);
-            }
-            if (address >= 0x7F10 && address < 0x7F1C) {
-               return TimerTwo.getValue((address & 0xC) >> 2);
-            }
-            if (address >= 0x7F20 && address < 0x7F24) {
-               return 0; // interrupt generator reads always return 0
-            }
-         }
+          // P7 Timer MMIO interception
+          if (Globals.getSettings().getExceptionForCourse()) {
+             if (inP7Timer0(address)) {
+                if (length != WORD_LENGTH_BYTES || !wordAligned(address)) {
+                   throw new AddressErrorException("invalid Timer0 load",
+                      Exceptions.ADDRESS_EXCEPTION_LOAD, address);
+                }
+                return TimerOne.getValue(p7TimerRegister(address));
+             }
+             if (inP7Timer1(address)) {
+                if (length != WORD_LENGTH_BYTES || !wordAligned(address)) {
+                   throw new AddressErrorException("invalid Timer1 load",
+                      Exceptions.ADDRESS_EXCEPTION_LOAD, address);
+                }
+                return TimerTwo.getValue(p7TimerRegister(address));
+             }
+             if (inP7InterruptGenerator(address)) {
+                return 0; // interrupt generator reads always return 0
+             }
+             if (inP7MmioSpace(address)) {
+                throw new AddressErrorException("MMIO address out of range",
+                   Exceptions.ADDRESS_EXCEPTION_LOAD, address);
+             }
+          }
          int relativeByteAddress;
          if (inDataSegment(address)) {
            // in data segment.  Will read one byte at a time, w/o regard to boundaries.
@@ -765,18 +805,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             throw new AddressErrorException("address for fetch not aligned on word boundary",
                Exceptions.ADDRESS_EXCEPTION_LOAD, address);
          }
-         // P7 Timer MMIO interception
-         if (Globals.getSettings().getExceptionForCourse()) {
-            if (address >= 0x7F00 && address < 0x7F0C) {
-               return TimerOne.getValue((address & 0xC) >> 2);
-            }
-            if (address >= 0x7F10 && address < 0x7F1C) {
-               return TimerTwo.getValue((address & 0xC) >> 2);
-            }
-            if (address >= 0x7F20 && address < 0x7F24) {
-               return 0;
-            }
-         }
+          // P7 Timer MMIO interception
+          if (Globals.getSettings().getExceptionForCourse()) {
+             if (inP7Timer0(address)) {
+                return TimerOne.getValue(p7TimerRegister(address));
+             }
+             if (inP7Timer1(address)) {
+                return TimerTwo.getValue(p7TimerRegister(address));
+             }
+             if (inP7InterruptGenerator(address)) {
+                return 0;
+             }
+             if (inP7MmioSpace(address)) {
+                throw new AddressErrorException("MMIO address out of range",
+                   Exceptions.ADDRESS_EXCEPTION_LOAD, address);
+             }
+          }
          if (inDataSegment(address)) {
            // in data segment
             relative = (address - dataSegmentBaseAddress) >> 2; // convert byte address to words
@@ -1048,8 +1092,28 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
    		
    		
-   /*********************************  THE UTILITIES  *************************************/ 
-   
+    /*********************************  THE UTILITIES  *************************************/
+
+       private static boolean inP7Timer0(int address) {
+         return address >= 0x7F00 && address < 0x7F0C;
+      }
+
+       private static boolean inP7Timer1(int address) {
+         return address >= 0x7F10 && address < 0x7F1C;
+      }
+
+       private static boolean inP7InterruptGenerator(int address) {
+         return address >= 0x7F20 && address < 0x7F24;
+      }
+
+       private static boolean inP7MmioSpace(int address) {
+         return address >= 0x7F00;
+      }
+
+       private static int p7TimerRegister(int address) {
+         return (address & 0xC) >> 2;
+      }
+
    /**
     *  Utility to determine if given address is word-aligned.
     *  @param address the address to check

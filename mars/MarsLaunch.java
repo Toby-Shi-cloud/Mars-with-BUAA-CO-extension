@@ -594,6 +594,7 @@ ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.
                out.println(warnings.generateWarningReport());
             }
             RegisterFile.initializeProgramCounter(startAtMain); // DPS 3/9/09
+            Coprocessor0.resetRegisters();
             if (simulate) {
                // store program args (if any) in MIPS memory
                new ProgramArgumentList(programArgumentList).storeProgramArguments();

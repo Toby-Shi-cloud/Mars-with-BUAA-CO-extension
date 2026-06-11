@@ -105,9 +105,9 @@ _ret:
     eret
 ```
 
-### 两点重要差异
+### 两点注意事项
 
-1. **复位 SR 差异**：本 Mars 复位 `SR=0x0000FF11`（IE=1、IM 全开），典型 Verilog CPU 复位 `SR=0`。对拍程序应在开头**显式设置 SR**（如 `ori $k0,$0,0x1001; mtc0 $k0,$12`）让两端一致后再触发中断。
+1. **P7 复位 SR 与课程对齐**：启用 `efc` 时本 Mars 复位 `SR=0x00000000`，与课程一致。对拍程序仍可在开头**显式设置 SR**（如 `ori $k0,$0,0x1001; mtc0 $k0,$12`）来开启需要测试的中断屏蔽位。
 2. **Timer 中断不易对拍**：本 Mars 的 Timer 按"每条指令"推进，Verilog 的 Timer 按"每个时钟周期"推进，二者计数无法对应。定时器中断的精确时序对拍不可行，请使用外部中断（`p7irq`）来测试中断机制。
 
 ---
@@ -180,7 +180,7 @@ java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
 
 | 项目 | 官方 P7 Mars | 本 Mars | 说明 |
 |------|-------------|---------|------|
-| SR 复位值 | `0x00000000`（IE=0, IM=0, EXL=0） | `0x0000FF11`（IE=1, IM 全开, EXL=0） | 本 Mars 预设中断全开，方便直接触发外部中断。对拍程序开头须显式 `mtc0 $t0, $12` 统一两端 SR 值 |
+| SR 复位值 | `0x00000000`（IE=0, IM=0, EXL=0） | `0x00000000`（`efc` 课程模式） | 与课程 CPU 复位状态一致。非 `efc` 普通 MARS 模式保留原版 `0x0000FF11` 行为，避免影响 GUI/MMIO 工具 |
 | `updateCause()` | 有 | 有（实现一致） | 每个指令周期调用，从 `HWInt` 刷新 Cause.IP[15:10] |
 | `isIter()` | 有 | 有（实现一致） | 中断响应条件：`(Cause & Status & 0xFC00)≠0 && EXL=0 && IE=1` |
 | CP0 debug 打印 | `System.err.println(... change to ...)` | 已移除 | 无功能影响 |

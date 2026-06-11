@@ -138,6 +138,17 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
        }
 
    /**
+    * Constructor for P7 interrupt/exception handling with fetch-exception EPC rules.
+    * @param cause exception cause code
+    * @param isFetchException true when EPC should be the current fetch PC
+    **/
+       public ProcessingException(int cause, boolean isFetchException) {
+         Exceptions.setRegisters(cause, isFetchException);
+         epcNotAligned = false;
+         isCourseException = true;
+       }
+
+   /**
     * Constructor for P7 with epcNotAligned flag.
     * @param ps a ProgramStatement of statement causing runtime exception
     * @param m a String containing specialized error message
