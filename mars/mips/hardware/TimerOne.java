@@ -141,6 +141,8 @@ public class TimerOne {
         }
         state = 0;
         IRQ = 0;
+        enable = false;
+        updateIRQ();
     }
 
     public static void addRegistersObserver(Observer observer) {

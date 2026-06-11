@@ -13,6 +13,7 @@ call :run status "" || exit /b 1
 call :run bd_not_taken "db" || exit /b 1
 call :run fetch_unaligned "db" || exit /b 1
 call :run jump_far "db" || exit /b 1
+call :run external_interrupt_ip "db p7irq=0x3008" || exit /b 1
 call :run timer_write_count "" || exit /b 1
 call :run eret_delay_slot "db" || exit /b 1
 call :run cp0_mask "" || exit /b 1

@@ -86,22 +86,27 @@ java -jar Mars.jar test.asm nc db mc CompactLargeText efc coL1 p7irq=0x3100
 >
 > 例：要让 `0x00400010` 被推迟执行 → MARS 用 `p7irq=0x0040000c`（0x...0c 执行、0x...10 推迟）。
 
-### 异常处理程序约定（先清中断、再读 Cause）
+### 异常处理程序约定（读 Cause 后按类型响应）
 
-外部中断需由程序写 **0x7F20** 来响应/清除，否则 testbench 会持续拉高 `interrupt` 造成中断风暴。**关键顺序：先写 0x7F20，再读 Cause**——本 Mars 在响应外部中断异常（ExcCode=0）时会清除外部 IP 位（HWInt bit2），但 Verilog testbench 要等程序写 0x7F20 后 `interrupt` 才落下；若先读 Cause，两端 IP 位会不一致导致对拍差异。推荐统一处理程序：
+外部中断需由程序写 **0x7F20** 来响应/清除，否则 testbench 会持续拉高 `interrupt` 造成中断风暴。本 Mars 的 `Cause.IP` 每个指令周期从 `HWInt` 刷新；外部中断进入 handler 后，IP bit2 会一直保持到 handler 写 `0x7F20`。因此可以先读 `Cause` 判断 `ExcCode/IP`，再只对外部中断执行响应写，避免在处理内部异常时误清 pending 的外部中断。外部中断专用处理程序示例；若还测试 Timer 中断，应在 `ExcCode==0` 分支里按 Timer IP 位关闭对应 Timer CTRL：
 
 ```mips
 .ktext 0x4180
-    ori  $k0, $0, 0x7f20    # 先清外部中断
-    sw   $0, 0($k0)
-    mfc0 $k0, $13           # 再读 Cause（此时两端 IP 都已清）
+    mfc0 $k0, $13           # Cause.IP 仍反映 pending 的外部中断
     andi $k1, $k0, 0x7c     # 取 ExcCode
-    beq  $k1, $0, _ret      # ExcCode==0 → 外部中断：直接返回（重执行被推迟指令）
+    bne  $k1, $0, _skip     # 内部异常：跳过故障指令
     nop
-    mfc0 $k0, $14           # 其他异常：EPC += 4 跳过出错指令
+    andi $k1, $k0, 0x1000   # 只响应外部中断 IP bit2
+    beq  $k1, $0, _ret
+    nop
+    ori  $k0, $0, 0x7f20    # 外部中断：响应中断发生器
+    sb   $0, 0($k0)
+_ret:
+    eret                    # 重执行被推迟指令
+_skip:
+    mfc0 $k0, $14           # 内部异常：EPC += 4 跳过出错指令
     addi $k0, $k0, 4
     mtc0 $k0, $14
-_ret:
     eret
 ```
 
@@ -220,7 +225,7 @@ java -jar Mars.jar testcode.asm mc CompactLargeText coL1 cl behlbal.class ig
 | HWInt 存储 | `Simulator.IRQ` / `Simulator.tmp`（static 变量） | `Globals.HWInt`（static int） | 本 Mars 改用单一 `HWInt` 变量，bit0=Timer0, bit1=Timer1, bit2=外部中断 |
 | 外部中断调度 | 不支持 | `p7irq=0x...,0x...` 参数 | 本 Mars 新增。在指定 PC 处注入 HWInt bit2，每个地址触发一次。`p7irq` 自动启用 `efc` |
 | 中断两周期延迟 | 相同（`prevIRQ`/`tmp` 机制） | `takeInterrupt && irqNow` 双重校验 | 防止 p7irq 注入周期的指令通过 `mtc0` 修改 IE/IM 后错误触发中断 |
-| 外部中断清除 | 不支持（官方无 p7irq） | 0x7F20 写入清除 HWInt bit2；Int 异常 (ExcCode=0) 入口时也清除 bit2 | Verilog testbench 仅靠 CPU 写 0x7F20 清除 `interrupt` 信号；两端清除时序不同，处理程序须先写 0x7F20 后读 Cause |
+| 外部中断清除 | 不支持（官方无 p7irq） | 仅 0x7F20 写入清除 HWInt bit2；Int 异常入口不自动清除 | 与 Verilog testbench 一致：`interrupt` 保持到 CPU 写 0x7F20，handler 读 Cause 时仍可看到外部 IP 位 |
 
 ### 异常处理
 

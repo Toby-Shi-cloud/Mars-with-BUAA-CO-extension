@@ -475,13 +475,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                            TimerOne.update();
                            TimerTwo.update();
                         }
-                        // P7: clear external interrupt bit only when the exception IS Int (ExcCode==0)
-                        if (Globals.getSettings().getExceptionForCourse()) {
-                           int excCode = (Coprocessor0.getValue(Coprocessor0.CAUSE) >> 2) & 0x1F;
-                           if (excCode == 0) {
-                              Globals.HWInt &= ~4;
-                           }
-                        }
+                        // P7: keep external interrupts pending until software acknowledges
+                        // the interrupt generator by writing 0x7F20.  Cause.IP is refreshed
+                        // from HWInt before each instruction, so clearing HWInt here would
+                        // make the first handler mfc0 $13 observe IP=0 while the course
+                        // testbench still holds interrupt high.
                         // NOTE: isEpcNotAligned() is currently always false (the 4-arg
                         // ProcessingException constructor is never invoked with ena=true).
                         // Kept as a safety guard for potential future EPC-alignment checks.
