@@ -1,4 +1,4 @@
 @echo off
 
 dir /S /B *.java > srcList.txt
-javac  Mars.java @srcList.txt
+javac -encoding UTF-8 Mars.java @srcList.txt

@@ -29,6 +29,16 @@ import mars.simulator.DelayedBranch;
 public abstract class BranchOperation {
 
     /**
+     * P7 delay-slot exception tracking.  Conditional branches have a delay
+     * slot whether or not the branch is taken.
+     */
+    protected void markBranchDelaySlot() {
+        if (Globals.getSettings().getExceptionForCourse()) {
+            DelayedBranch.setTryjbranch();
+        }
+    }
+
+    /**
      * Method to process a successful branch condition. DO NOT USE WITH JUMP
      * INSTRUCTIONS! The branch operand is a relative displacement in words
      * whereas the jump operand is an absolute address in bytes.
@@ -61,6 +71,8 @@ public abstract class BranchOperation {
                     RegisterFile.getProgramCounter()
                             + (displacement << 2)); // - Instruction.INSTRUCTION_LENGTH);
         }
+        // P7: mark branch instruction executed for delay slot tracking
+        markBranchDelaySlot();
     }
 
     /**
@@ -83,6 +95,10 @@ public abstract class BranchOperation {
             DelayedBranch.register(targetAddress);
         } else {
             RegisterFile.setProgramCounter(targetAddress);
+        }
+        // P7: mark jump instruction executed for delay slot tracking
+        if (Globals.getSettings().getExceptionForCourse()) {
+            DelayedBranch.setTryjbranch();
         }
     }
 

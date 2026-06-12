@@ -65,19 +65,58 @@ public class Exceptions {
 	public static final int FLOATING_POINT_UNDERFLOW = 17;
 	
 	/**
-	 *  Given MIPS exception cause code, will place that code into 
+	 *  Given MIPS exception cause code, will place that code into
 	 *  coprocessor 0 CAUSE register ($13), set the EPC register to
-	 *  "current" program counter, and set Exception Level bit in STATUS register.
+	 *  "current" program counter minus 4, and set Exception Level bit in STATUS register.
 	 *
 	 *  @param cause The cause code (see Exceptions for a list)
 	 */
 	public static void setRegisters(int cause) {
-	  // Set CAUSE register bits 2 thru 6 to cause value.  The "& 0xFFFFFC83" will set bits 2-6 and 8-9 to 0 while
-	  // keeping all the others.  Left-shift by 2 to put cause value into position then OR it in.  Bits 8-9 used to
-	  // identify devices for External Interrupt (8=keyboard,9=display).
-	  Coprocessor0.updateRegister(Coprocessor0.CAUSE,(Coprocessor0.getValue(Coprocessor0.CAUSE) & 0xFFFFFC83 | (cause << 2)));
-	  // When exception occurred, PC had already been incremented so need to subtract 4 here.
-	  Coprocessor0.updateRegister(Coprocessor0.EPC, RegisterFile.getProgramCounter()-Instruction.INSTRUCTION_LENGTH);
+	  setRegisters(cause, false);
+	}
+
+	/**
+	 *  Given MIPS exception cause code, will place that code into
+	 *  coprocessor 0 CAUSE register ($13), set the EPC register, and set
+	 *  Exception Level bit in STATUS register.
+	 *
+	 *  @param cause The cause code (see Exceptions for a list)
+	 *  @param isFetchException true if this is a fetch exception (PC not aligned/out of range),
+	 *         in which case EPC = PC; otherwise EPC = PC - 4
+	 */
+	public static void setRegisters(int cause, boolean isFetchException) {
+	  if (mars.Globals.getSettings().getExceptionForCourse()) {
+	    // P7 exception handling with BD bit support
+	    Coprocessor0.updateRegister(Coprocessor0.CAUSE, (Coprocessor0.getValue(Coprocessor0.CAUSE) & 0xFFFFFC83) | (cause << 2));
+	    if (isFetchException) {
+	      // Fetch exception: EPC = PC (instruction was not executed)
+	      Coprocessor0.updateRegister(Coprocessor0.EPC, RegisterFile.getProgramCounter());
+	    } else {
+	      // Normal exception: EPC = PC - 4 (instruction that caused the exception)
+	      Coprocessor0.updateRegister(Coprocessor0.EPC, RegisterFile.getProgramCounter() - Instruction.INSTRUCTION_LENGTH);
+	    }
+	    // Handle BD bit for branch delay slot
+	    if (mars.simulator.DelayedBranch.isTrydelay()) {
+	      if (mars.Globals.getSettings().getBooleanSetting(mars.Settings.DELAYED_BRANCHING_ENABLED)) {
+	        // Set BD bit (bit 31) and adjust EPC to point to branch instruction
+	        Coprocessor0.updateRegister(Coprocessor0.CAUSE, Coprocessor0.getValue(Coprocessor0.CAUSE) | Integer.MIN_VALUE);
+	        Coprocessor0.updateRegister(Coprocessor0.EPC, Coprocessor0.getValue(Coprocessor0.EPC) - Instruction.INSTRUCTION_LENGTH);
+	      }
+	      mars.simulator.DelayedBranch.clear();
+	      mars.simulator.DelayedBranch.tryClean();
+	    } else {
+	      // Clear BD bit
+	      Coprocessor0.updateRegister(Coprocessor0.CAUSE, Coprocessor0.getValue(Coprocessor0.CAUSE) & Integer.MAX_VALUE);
+	    }
+	  } else {
+	    // Original MARS exception handling
+	    // Set CAUSE register bits 2 thru 6 to cause value.  The "& 0xFFFFFC83" will set bits 2-6 and 8-9 to 0 while
+	    // keeping all the others.  Left-shift by 2 to put cause value into position then OR it in.  Bits 8-9 used to
+	    // identify devices for External Interrupt (8=keyboard,9=display).
+	    Coprocessor0.updateRegister(Coprocessor0.CAUSE,(Coprocessor0.getValue(Coprocessor0.CAUSE) & 0xFFFFFC83 | (cause << 2)));
+	    // When exception occurred, PC had already been incremented so need to subtract 4 here.
+	    Coprocessor0.updateRegister(Coprocessor0.EPC, RegisterFile.getProgramCounter()-Instruction.INSTRUCTION_LENGTH);
+	  }
 	  // Set EXL (Exception Level) bit, bit position 1, in STATUS register to 1.
 	  Coprocessor0.updateRegister(Coprocessor0.STATUS, Binary.setBit(Coprocessor0.getValue(Coprocessor0.STATUS), Coprocessor0.EXCEPTION_LEVEL));
 	}

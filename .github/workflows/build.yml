@@ -1,7 +1,12 @@
 name: Build Jar
 
 on:
+  workflow_dispatch:
+  pull_request:
   push:
+    branches:
+      - main
+      - master
     tags:
       - "v*.*"
 
@@ -13,9 +18,9 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up JDK 8
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: '8'
         distribution: 'temurin'
@@ -72,8 +77,15 @@ jobs:
         java -jar mars.jar code_cc.asm nc mc CompactLargeText cc > testTemp.txt
         fc testTemp.txt stdout_cc1.txt
 
+    - name: P7 regression tests
+      shell: cmd
+      run: |
+        cd test
+        call run_p7_regression.bat
+
     - name: Create a release
-      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
       with:
         files: |
           Mars_CO_${{  github.ref_name }}.jar

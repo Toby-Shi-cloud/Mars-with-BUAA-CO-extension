@@ -45,9 +45,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 		public static final int EPC    = 14;
 		
 		public static final int EXCEPTION_LEVEL = 1;  // bit position in STATUS register
-		// bits 8-15 (mask for interrupt levels) all set, bit 4 (user mode) set,
-		// bit 1 (exception level) not set, bit 0 (interrupt enable) set.
+		// Legacy MARS keeps interrupts enabled by default.  In BUAA CO P7
+		// course mode (efc), resetRegisters() overrides SR to 0 so all CP0
+		// registers match the course CPU reset state.
 		public static final int DEFAULT_STATUS_VALUE = 0x0000FF11;
+		private static final int COURSE_STATUS_RESET_VALUE = 0;
+		private static final int STATUS_WRITE_MASK = 0x0000FC03;
+		private static final int CAUSE_BD_MASK = 0x80000000;
+		private static final int CAUSE_IP_MASK = 0x0000FC00;
+		private static final int CAUSE_EXCCODE_MASK = 0x0000007C;
+		private static final int CAUSE_WRITE_MASK = CAUSE_BD_MASK | CAUSE_IP_MASK | CAUSE_EXCCODE_MASK;
 		
       private static Register [] registers = 
           { new Register("$8 (vaddr)", 8, 0),  
@@ -82,7 +89,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          for (int i=0; i< registers.length; i++){
             if(("$"+registers[i].getNumber()).equals(n) || registers[i].getName().equals(n)) {
 				   oldValue = registers[i].getValue();
-               registers[i].setValue(val);
+               registers[i].setValue(normalizeRegisterValue(registers[i].getNumber(), val));
                break;
             }
          }
@@ -100,13 +107,25 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
          for (int i=0; i< registers.length; i++){
             if(registers[i].getNumber()== num) {
                old = (Globals.getSettings().getBackSteppingEnabled())
-                        ? Globals.program.getBackStepper().addCoprocessor0Restore(num,registers[i].setValue(val))
-                  		: registers[i].setValue(val);
+                        ? Globals.program.getBackStepper().addCoprocessor0Restore(num,registers[i].setValue(normalizeRegisterValue(num, val)))
+                        : registers[i].setValue(normalizeRegisterValue(num, val));
                break;
             }
          }
          return old;
 			}
+
+      private static int normalizeRegisterValue(int num, int val) {
+         if (Globals.getSettings().getExceptionForCourse()) {
+            if (num == STATUS) {
+               return val & STATUS_WRITE_MASK;
+            }
+            if (num == CAUSE) {
+               return val & CAUSE_WRITE_MASK;
+            }
+         }
+         return val;
+      }
 
       
       /**
@@ -188,7 +207,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    	
        public static void resetRegisters(){
          for(int i=0; i< registers.length; i++){
-            registers[i].resetValue();
+            if (Globals.getSettings().getExceptionForCourse() &&
+               registers[i].getNumber() == STATUS) {
+               registers[i].setValueNoNotify(COURSE_STATUS_RESET_VALUE);
+            } else {
+               registers[i].resetValue();
+            }
          }
       }
       
@@ -204,12 +228,43 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       
       /**
    	 *  Each individual register is a separate object and Observable.  This handy method
-   	 *  will delete the given Observer from each one.  
+   	 *  will delete the given Observer from each one.
    	 */
        public static void deleteRegistersObserver(Observer observer) {
          for (int i=0; i<registers.length; i++) {
             registers[i].deleteObserver(observer);
          }
       }
+
+      /**
+       *  Update Cause register IP bits [15:10] from Globals.HWInt.
+       *  Used by P7 interrupt handling.
+       */
+       public static void updateCause() {
+         int causeIdx = -1;
+         for (int i = 0; i < registers.length; i++) {
+            if (registers[i].getNumber() == CAUSE) { causeIdx = i; break; }
+         }
+         if (causeIdx >= 0) {
+            registers[causeIdx].setValueNoNotify(
+               (registers[causeIdx].getValue() & (CAUSE_BD_MASK | CAUSE_EXCCODE_MASK)) |
+               ((mars.Globals.HWInt & 0x3F) << 10)
+            );
+         }
+       }
+
+      /**
+       *  Check if an interrupt should be taken.
+       *  Conditions: (Cause & Status & IP_mask) != 0, EXL == 0, IE == 1.
+       *  @return true if interrupt should be responded to.
+       */
+       public static boolean isIter() {
+         int status = getValue(STATUS);
+         int cause = getValue(CAUSE);
+         boolean hasInt = ((cause & status & 0xFC00) != 0);
+         boolean notEXL = ((status & 2) == 0);
+         boolean IE = ((status & 1) != 0);
+         return hasInt && notEXL && IE;
+       }
 
    }

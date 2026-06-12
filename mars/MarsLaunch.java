@@ -102,6 +102,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
            cl  -- load an additional instruction from a .class file.<br>
                   Note that your .class file must be in the same directory as mars.jar.<br>
            ig  -- ignore arithmetic overflow.<br>
+         efc  -- enable P7 exception/interrupt handling for BUAA CO.<br>
            cc  -- count the cycles of the simulator.<br>
 ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.<br>
     **/
@@ -456,6 +457,27 @@ ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.
                ignoreArithmeticOverflow = true;
                continue;
             }
+            if (args[i].equalsIgnoreCase("efc")) { // P7 exception/interrupt handling for BUAA CO.
+               Globals.getSettings().setExceptionForCourse(true);
+               continue;
+            }
+
+            if (args[i].toLowerCase().startsWith("p7irq=")) { // P7 external interrupt schedule
+               String value = args[i].substring(6); // after "p7irq="
+               String[] addrs = value.split(",");
+               ArrayList<Integer> list = new ArrayList<Integer>();
+               for (String addr : addrs) {
+                  addr = addr.trim();
+                  try {
+                     list.add(Binary.stringToInt(addr));
+                  } catch (NumberFormatException nfe) {
+                     out.println("Invalid address in p7irq: " + addr);
+                  }
+               }
+               Globals.getSettings().setP7IrqPcList(list);
+               Globals.getSettings().setExceptionForCourse(true); // p7irq auto-enables efc
+               continue;
+            }
 
             if (args[i].equalsIgnoreCase("cc")) { // added 3-Sep-2024, by swkfk to count the cycles of the simulator.
                countCycles = true;
@@ -572,6 +594,7 @@ ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.
                out.println(warnings.generateWarningReport());
             }
             RegisterFile.initializeProgramCounter(startAtMain); // DPS 3/9/09
+            Coprocessor0.resetRegisters();
             if (simulate) {
                // store program args (if any) in MIPS memory
                new ProgramArgumentList(programArgumentList).storeProgramArguments();
@@ -912,6 +935,7 @@ ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.
          out.println("      cl <class> -- load an additional instruction from a .class file.");
          out.println("             Note that your .class file must be in the same directory as mars.jar.");
          out.println("      ig  -- ignore arithmetic overflow.");
+         out.println("     efc  -- enable P7 exception/interrupt handling for BUAA CO.");
          out.println("      cc  -- count the cycles of the simulator.<br>");
          out.println("     ccw <div>:<mul>:<j/br>:<mem>:<other> -- set the real cycles of each instruction.<br>");
       }

@@ -1,5 +1,6 @@
    package mars;
    import mars.mips.instructions.syscalls.*;
+import java.util.ArrayList;
    import mars.mips.instructions.*;
    import mars.mips.hardware.*;
    import mars.assembler.*;
@@ -97,10 +98,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       public static PrintStream displayOutput = System.out;
       /** Current Version of this adapted version */
       public static final String extensionVersion = "0.5";
-      /** Use by RF to store the changing log string */
-      public static String displayRFchanging = null;
-      /** Use by DM to store the changing log string */
-      public static String displayDMchanging = null;
+      /** Use by RF to store the changing log strings (supports multiple writes per instruction) */
+      public static ArrayList<String> displayRFchanging = new ArrayList<String>();
+      /** Use by DM to store the changing log strings (supports multiple writes per instruction) */
+      public static ArrayList<String> displayDMchanging = new ArrayList<String>();
+      /** Hardware interrupt pending bits for P7 (bit 0=Timer0, bit 1=Timer1) */
+      public static int HWInt = 0;
       /** display level, 0 (default) if print none, 1 if print std ans, 2 if print std debug */
 //      public static int displayLevel = 0;
       /** ignore arithmetic overflow if true */
@@ -139,8 +142,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             symbolTable = new SymbolTable("global");
             settings = new Settings(gui);
             initialized = true;
-            debug = false; 
+            debug = false;
 				memory.clear(); // will establish memory configuration from setting
+				HWInt = 0;
          }
       }
    	
@@ -260,3 +264,4 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
    
    }
+
