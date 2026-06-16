@@ -6,3 +6,4 @@ out/
 *.class
 .claude
 *.jar
+sources.txt
